@@ -1,5 +1,0 @@
-visible hitbox
-remap keys
-practice stage portions
-spell practice
-bosh rush
