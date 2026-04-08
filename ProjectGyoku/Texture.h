@@ -1,8 +1,7 @@
 #pragma once
 
 #include <DxLib.h>
-#include "FileManager.h"
-#include "Math.h"
+#include <string>
 
 class Texture
 {
@@ -10,12 +9,13 @@ public:
 	~Texture();
 
 	bool loadTexture(const std::string& filePath, const std::string& alphaPath = "");
+	void unload();
 
 	int getWidth() { return width; }
 	int getHeight() { return height; }
 	int getHandle() { return handle; }
 
-	void restore();
+	bool restore();
 
 private:
 	int handle = -1;

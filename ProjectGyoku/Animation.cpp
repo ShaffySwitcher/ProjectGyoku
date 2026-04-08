@@ -1,19 +1,23 @@
 #include "Animation.h"
 #include "Log.h"
+#include "FileManager.h"
 
+#include <algorithm>
 #include <unordered_map>
 #include "Sprite.h"
 
 std::map<std::string, std::shared_ptr<Animation>> ANMManager::animations = {};
+std::vector<ANMRunner*> ANMRunner::activeRunners = {};
 
 const std::map<std::string, std::string> animationPaths = {
 	{ "dummy", "data/dummy.anm" },
 	{ "text", "data/text/text.anm" }
 };
 
-std::shared_ptr<Animation> Animation::loadFromFile(const std::string& path)
+std::shared_ptr<Animation> Animation::loadFromFile(const std::string& path, bool loadTexture)
 {
 	auto anm = std::make_shared<Animation>();
+	anm->path = path;
 
 	std::shared_ptr<FileBuffer> anmFile = FileManager::loadFile(path);
 	if(!anmFile){
@@ -92,7 +96,7 @@ std::shared_ptr<Animation> Animation::loadFromFile(const std::string& path)
 		anmFile->seek(offset);
 	}
 
-	if (header.pathOffset) {
+	if (loadTexture && header.pathOffset) {
 		std::string textureAlphaPath{};
 		std::string texturePath{};
 
@@ -135,6 +139,8 @@ std::shared_ptr<Animation> ANMManager::load(const std::string& name, const std::
 		return nullptr;
 	}
 
+	anm->path = *resolvedPath;
+
 	animations[name] = anm;
 	return anm;
 }
@@ -147,11 +153,72 @@ void ANMManager::unload(const std::string& name)
 	}
 }
 
+void ANMManager::unloadAll()
+{
+	animations.clear();
+}
+
+bool ANMManager::reloadScripts(const std::string& name)
+{
+	auto it = animations.find(name);
+	if (it == animations.end() || !it->second) {
+		return false;
+	}
+
+	auto& animation = it->second;
+	if (animation->path.empty()) {
+		Log::print("ANMManager::reloadScripts(): Animation '%s' has no source path", name.c_str());
+		return false;
+	}
+
+	auto refreshed = Animation::loadFromFile(animation->path, false);
+	if (!refreshed) {
+		Log::print("ANMManager::reloadScripts(): Failed to reload scripts for '%s'", name.c_str());
+		return false;
+	}
+
+	animation->sprites = std::move(refreshed->sprites);
+	animation->scripts = std::move(refreshed->scripts);
+	animation->revision++;
+
+	Log::print("ANMManager::reloadScripts(): Reloaded scripts for '%s'", name.c_str());
+	return true;
+}
+
+int ANMManager::reloadScripts()
+{
+	int reloaded = 0;
+	for (const auto& entry : animations) {
+		if (reloadScripts(entry.first)) {
+			reloaded++;
+		}
+	}
+
+	return reloaded;
+}
+
+int ANMManager::reloadScriptsAndRestartRunners()
+{
+	const int reloaded = reloadScripts();
+	ANMRunner::restartAll();
+	return reloaded;
+}
+
+int ANMManager::reloadTextures()
+{
+	int reloaded = 0;
+	for (auto& pair : animations) {
+		if (pair.second && pair.second->texture.restore()) {
+			reloaded++;
+		}
+	}
+
+	return reloaded;
+}
+
 void ANMManager::restore()
 {
-	for (auto& pair : animations) {
-		pair.second->texture.restore();
-	}
+	reloadTextures();
 }
 
 ANMRunner::ANMRunner(std::shared_ptr<Animation> animation, uint32_t id, std::shared_ptr<Drawable> target, uint32_t spriteOffset)
@@ -159,30 +226,117 @@ ANMRunner::ANMRunner(std::shared_ptr<Animation> animation, uint32_t id, std::sha
 	this->animation = animation;
 	this->target = target;
 	this->spriteOffset = spriteOffset;
+	this->scriptId = static_cast<int32_t>(id);
+	activeRunners.push_back(this);
 
-	if (animation) {
-		try {
-			this->script = &animation->scripts.at(id);
-		}
-		catch (const std::out_of_range&) {
-			Log::print("ANMRunner::ANMRunner(): Animation does not contain script with ID %u", id);
-		}
-	}
-	else {
-		this->script = nullptr;
-	}
+	bindScript(true);
 
 	this->step();
 	this->spriteOffset = 0;
 }
 
+ANMRunner::~ANMRunner()
+{
+	auto it = std::find(activeRunners.begin(), activeRunners.end(), this);
+	if (it != activeRunners.end()) {
+		activeRunners.erase(it);
+	}
+}
+
+void ANMRunner::restart()
+{
+	running = true;
+	waiting = false;
+	instructionIndex = 0;
+	frame.reset();
+
+	if (!bindScript(true)) {
+		return;
+	}
+
+	step();
+}
+
+void ANMRunner::restartAll()
+{
+	for (ANMRunner* runner : activeRunners) {
+		if (runner) {
+			runner->restart();
+		}
+	}
+}
+
+bool ANMRunner::bindScript(bool logOnFailure)
+{
+	if (!animation) {
+		script = nullptr;
+		return false;
+	}
+
+	auto it = animation->scripts.find(scriptId);
+	if (it == animation->scripts.end()) {
+		script = nullptr;
+		if (logOnFailure && !missingScriptLogged) {
+			Log::print("ANMRunner::bindScript(): Animation does not contain script with ID %d", scriptId);
+			missingScriptLogged = true;
+		}
+		return false;
+	}
+
+	script = &it->second;
+	boundRevision = animation->revision;
+	missingScriptLogged = false;
+
+	if (script->instructions.empty()) {
+		running = false;
+		instructionIndex = 0;
+		return false;
+	}
+
+	if (instructionIndex >= script->instructions.size()) {
+		instructionIndex = static_cast<uint32_t>(script->instructions.size() - 1);
+	}
+
+	return true;
+}
+
+void ANMRunner::refreshScriptBinding()
+{
+	if (animation && boundRevision != animation->revision) {
+		bindScript(true);
+	}
+}
+
 bool ANMRunner::step()
 {
-	if(!script) {
+	refreshScriptBinding();
+
+	if(!script || !target) {
+		if (target) {
+			target->update();
+		}
+		return false;
+	}
+
+	if (script->instructions.empty()) {
+		running = false;
+		target->update();
+		return false;
+	}
+
+	if (instructionIndex >= script->instructions.size()) {
+		instructionIndex = static_cast<uint32_t>(script->instructions.size() - 1);
+		running = false;
+		target->update();
 		return false;
 	}
 
 	while (running && !waiting) {
+		if (instructionIndex >= script->instructions.size()) {
+			running = false;
+			break;
+		}
+
 		ANMInstruction* instr = &script->instructions[instructionIndex];
 
 		if (instr->time > this->frame.getFrame()) {
@@ -287,7 +441,7 @@ bool ANMRunner::step()
 					break;
 				case ANMOpcode::JUMP: {
 					const auto args = instr->as<JumpArgs>();
-					instructionIndex = args.offset;
+					instructionIndex = std::min<uint32_t>(args.offset, static_cast<uint32_t>(this->script->instructions.size() - 1));
 					this->frame = this->script->instructions[instructionIndex].time;
 					break;
 				}
@@ -332,8 +486,17 @@ bool ANMRunner::step()
 
 void ANMRunner::interrupt(int32_t label, bool setVisible)
 {
+	refreshScriptBinding();
+
+	if (!script || script->instructions.empty()) {
+		return;
+	}
+
 	if (script->interrupts.count(label)) {
 		this->instructionIndex = script->interrupts[label];
+		if (this->instructionIndex >= this->script->instructions.size()) {
+			this->instructionIndex = static_cast<uint32_t>(this->script->instructions.size() - 1);
+		}
 		this->frame = this->script->instructions[instructionIndex].time;
 
 		waiting = false;

@@ -401,6 +401,9 @@ FodyWeavers.xsd
 # Project Gyoku
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# .vscode files
+.vscode/*
+
 # Development tools
 Tools/
 count.py

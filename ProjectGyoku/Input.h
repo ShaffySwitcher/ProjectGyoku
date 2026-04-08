@@ -44,10 +44,13 @@ public:
 	static bool gameInputReleased[static_cast<uint8_t>(GameInput::GAME_INPUT_COUNT)];
 
 	static void update();
+	static void clearGameInputState();
+
 private:
 	static bool inputBuffer[256];
 	static bool inputBufferLastFrame[256];
-	static bool gameInputCurrentLastFrame[static_cast<uint8_t>(GameInput::LAST_KEY)];
+	static bool gameInputRawCurrent[static_cast<uint8_t>(GameInput::LAST_KEY)];
+	static bool gameInputRawCurrentLastFrame[static_cast<uint8_t>(GameInput::LAST_KEY)];
 	static uint32_t gameInputFrame[static_cast<uint8_t>(GameInput::LAST_KEY)];
 };
 

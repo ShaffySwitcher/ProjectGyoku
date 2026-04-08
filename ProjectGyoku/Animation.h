@@ -2,6 +2,10 @@
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
+#include <map>
+#include <vector>
+#include <memory>
+#include <string>
 #include "Global.h"
 #include "Texture.h"
 #include "Drawable.h"
@@ -113,9 +117,10 @@ struct Animation {
     std::map<int32_t, Rect> sprites{};
     std::map<int32_t, ANMScript> scripts{};
     std::string path{};
+    uint32_t revision = 0;
     Texture texture;
 
-	static std::shared_ptr<Animation> loadFromFile(const std::string& path);
+	static std::shared_ptr<Animation> loadFromFile(const std::string& path, bool loadTexture = true);
 };
 
 class ANMManager
@@ -123,6 +128,13 @@ class ANMManager
 public:
     static std::shared_ptr<Animation> load(const std::string& name, const std::string& path = "");
 	static void unload(const std::string& name);
+	static void unloadAll();
+
+	static bool reloadScripts(const std::string& name);
+	static int reloadScripts();
+    static int reloadScriptsAndRestartRunners();
+
+	static int reloadTextures();
 
     static void restore();
 
@@ -134,11 +146,18 @@ class ANMRunner
 {
 public:
 	ANMRunner(std::shared_ptr<Animation> animation, uint32_t id, std::shared_ptr<Drawable> target, uint32_t spriteOffset = 0);
+    ~ANMRunner();
 
     bool step();
 	void interrupt(int32_t label, bool setVisible = true);
+    void restart();
+
+    static void restartAll();
 
 private:
+    bool bindScript(bool logOnFailure = false);
+    void refreshScriptBinding();
+
     void setSprite(int32_t id);
 	void setOffset(float x, float y, float z) { target->setOffset({ x, y, z }); }
 	void setScale(float x, float y) { target->setScale({ x, y }); }
@@ -166,10 +185,16 @@ private:
     bool running = true;
     bool waiting = false;
 
+    int32_t scriptId = -1;
+    uint32_t boundRevision = 0;
+    bool missingScriptLogged = false;
+
     ANMScript* script = nullptr;
 
     Timer frame;
     uint32_t instructionIndex = 0;
     uint32_t spriteOffset = 0;
+
+	static std::vector<ANMRunner*> activeRunners;
 };
 

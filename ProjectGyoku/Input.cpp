@@ -2,6 +2,8 @@
 #include "Supervisor.h"
 #include "Log.h"
 
+#include <cstring>
+
 bool Input::inputBuffer[256];
 bool Input::inputBufferLastFrame[256];
 bool Input::inputCurrent[256];
@@ -12,7 +14,8 @@ bool Input::gameInputCurrent[static_cast<uint8_t>(GameInput::GAME_INPUT_COUNT)];
 bool Input::gameInputPressed[static_cast<uint8_t>(GameInput::GAME_INPUT_COUNT)];
 bool Input::gameInputPressedRepeat[static_cast<uint8_t>(GameInput::LAST_KEY)];
 bool Input::gameInputReleased[static_cast<uint8_t>(GameInput::GAME_INPUT_COUNT)];
-bool Input::gameInputCurrentLastFrame[static_cast<uint8_t>(GameInput::LAST_KEY)];
+bool Input::gameInputRawCurrent[static_cast<uint8_t>(GameInput::LAST_KEY)];
+bool Input::gameInputRawCurrentLastFrame[static_cast<uint8_t>(GameInput::LAST_KEY)];
 uint32_t Input::gameInputFrame[static_cast<uint8_t>(GameInput::LAST_KEY)];
 
 void Input::update()
@@ -27,19 +30,31 @@ void Input::update()
 	}
 
 	int joypadInput = GetJoypadInputState(DX_INPUT_PAD1);
-	memcpy(&gameInputCurrentLastFrame, &gameInputCurrent, sizeof(bool) * static_cast<uint8_t>(GameInput::LAST_KEY));
+	memcpy_s(
+		gameInputRawCurrentLastFrame,
+		sizeof(bool) * static_cast<uint8_t>(GameInput::LAST_KEY),
+		gameInputRawCurrent,
+		sizeof(bool) * static_cast<uint8_t>(GameInput::LAST_KEY)
+	);
 
 	for(uint8_t i = 0; i < static_cast<uint8_t>(GameInput::LAST_KEY); i++) {
-		gameInputCurrent[i] = inputCurrent[gSupervisor.config.keyboardMap[i]] || (joypadInput & gSupervisor.config.gamepadMap[i]);
-		gameInputPressed[i] = gameInputCurrent[i] && !gameInputCurrentLastFrame[i];
-		gameInputReleased[i] = !gameInputCurrent[i] && gameInputCurrentLastFrame[i];
+		const bool rawCurrent = inputCurrent[gSupervisor.config.keyboardMap[i]] || (joypadInput & gSupervisor.config.gamepadMap[i]);
+		const bool rawLast = gameInputRawCurrentLastFrame[i];
+
+		gameInputRawCurrent[i] = rawCurrent;
+		gameInputCurrent[i] = rawCurrent;
+		gameInputPressed[i] = rawCurrent && !rawLast;
+		gameInputReleased[i] = !rawCurrent && rawLast;
 
 		if (gameInputPressed[i]) {
 			gameInputFrame[i] = gSupervisor.currentFrame;
 
 		}
-		if (gameInputCurrent[i]) {
+		if (rawCurrent) {
 			gameInputPressedRepeat[i] = (gSupervisor.currentFrame - gameInputFrame[i]) % 8 == 0;
+		}
+		else {
+			gameInputPressedRepeat[i] = false;
 		}
 	}
 
@@ -52,4 +67,12 @@ void Input::update()
 	gameInputPressed[static_cast<uint8_t>(GameInput::CANCEL)] = gameInputPressed[static_cast<uint8_t>(GameInput::BOMB)] || inputPressed[KEY_INPUT_BACK];
 	gameInputReleased[static_cast<uint8_t>(GameInput::CANCEL)] = gameInputReleased[static_cast<uint8_t>(GameInput::BOMB)] || inputReleased[KEY_INPUT_BACK];
 
+}
+
+void Input::clearGameInputState()
+{
+	memset(gameInputCurrent, 0, sizeof(bool) * static_cast<uint8_t>(GameInput::GAME_INPUT_COUNT));
+	memset(gameInputPressed, 0, sizeof(bool) * static_cast<uint8_t>(GameInput::GAME_INPUT_COUNT));
+	memset(gameInputReleased, 0, sizeof(bool) * static_cast<uint8_t>(GameInput::GAME_INPUT_COUNT));
+	memset(gameInputPressedRepeat, 0, sizeof(bool) * static_cast<uint8_t>(GameInput::LAST_KEY));
 }

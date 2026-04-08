@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Drawable.h"
-#include "Log.h"
 #include "Animation.h"
 
 #define TEXT_SP_SYMBOL -128

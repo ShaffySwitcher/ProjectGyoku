@@ -16,6 +16,8 @@
 #include "Texture.h"
 #include "Sprite.h"
 #include "resource.h"
+#include "DebugMenu.h"
+#include "Profiler.h"
 
 void saveScreenshot();
 
@@ -158,6 +160,10 @@ bool init() {
 		return false;
 	}
 
+#ifdef DEBUG
+	DebugMenu::init();
+#endif
+
 	FPS::init();
 
 	Log::write("--- Initialization success! ---");
@@ -187,6 +193,10 @@ bool loop() {
 	FPS::update();
 	Input::update();
 
+#ifdef DEBUG
+	DebugMenu::update();
+#endif
+
 	return true;
 }
 
@@ -209,16 +219,54 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
 	gStateManager.setState(std::make_shared<DebugScene>());
 
-    while (loop()) {
-		if (!gStateManager.getState()) break;
+	while (true) {
+		Profiler::beginFrame();
 
-		gStateManager.update();
-		gStateManager.render();
+		bool shouldContinue = false;
+		{
+			PROFILE_SCOPE("Loop");
+			shouldContinue = loop();
+		}
 
-		ScreenFlip();
+		if (!shouldContinue) {
+			Profiler::endFrame();
+			break;
+		}
+
+		if (!gStateManager.getState()) {
+			Profiler::endFrame();
+			break;
+		}
+
+		{
+			PROFILE_SCOPE("State Update");
+			gStateManager.update();
+		}
+
+		{
+			PROFILE_SCOPE("State Render");
+			gStateManager.render();
+		}
+
+#ifdef DEBUG
+		{
+			PROFILE_SCOPE("Debug Menu Render");
+			DebugMenu::render();
+		}
+#endif
+
+		Profiler::renderOverlay();
+
+		{
+			PROFILE_SCOPE("Screen Flip");
+			ScreenFlip();
+		}
+
 		if (Input::inputPressed[KEY_INPUT_P]) saveScreenshot();
 		gSupervisor.currentFrame++;
-    }
+
+		Profiler::endFrame();
+	}
 
 	gSupervisor.saveConfig("pg01.cfg");
 	DxLib_End();
