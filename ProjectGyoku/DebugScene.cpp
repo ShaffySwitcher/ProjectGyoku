@@ -4,6 +4,7 @@
 #include "Animation.h"
 #include "Input.h"
 #include "Utils.h"
+#include "Audio.h"
 
 void DebugScene::init()
 {
@@ -57,6 +58,10 @@ void DebugScene::update()
         else if (!scripts.empty()) {
             currentScript = scripts.begin()->first;
         }
+    }
+
+    if (Input::gameInputPressed[static_cast<uint8_t>(GameInput::SPECIAL)]) {
+        SFXPlayer::play(SFX::DUMMY);
     }
 
 	if (currentScript != oldScript) {

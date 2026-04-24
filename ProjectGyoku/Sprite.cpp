@@ -13,8 +13,8 @@ void Sprite::render(Vector position)
 	if (!texture) return;
 
 	// Calculate sprite dimensions
-	const float baseW = (sizeOverride.x > 0.0f) ? sizeOverride.x : static_cast<float>(texture->getWidth());
-	const float baseH = (sizeOverride.y > 0.0f) ? sizeOverride.y : static_cast<float>(texture->getHeight());
+	const float baseW = (sizeOverride.x > 0.0f) ? sizeOverride.x : texCoords.w;
+	const float baseH = (sizeOverride.y > 0.0f) ? sizeOverride.y : texCoords.h;
 	const float scaledW = baseW * scale.x;
 	const float scaledH = baseH * scale.y;
 

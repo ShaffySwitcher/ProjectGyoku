@@ -1,9 +1,18 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
+
+#include "Audio.h"
+#include "Supervisor.h"
+
+#define MENU_MAX_VISIBLE_ENTRIES 11
+#define MENU_LINE_HEIGHT 24
+#define MENU_FIRST_LINE_Y 120
 
 class DebugMenu
 {
@@ -11,9 +20,12 @@ public:
 	enum class Page {
 		ROOT,
 		RUNTIME,
-		GRAPHICS,
 		ANIMATION,
-		PROFILER
+		PROFILER,
+		CONFIGURATION,
+		CONFIGURATION_VIDEO,
+		CONFIGURATION_AUDIO,
+		CONFIGURATION_GAMEPLAY
 	};
 
 	static void init();
@@ -38,9 +50,23 @@ private:
 	static std::map<Page, MenuPageDefinition> menuPages;
 	static int selectedIndex;
 	static int debugTargetFPS;
+	static int menuScrollOffset;
 
 	static bool isOpen;
 	static bool isInteractable;
+
+	static const char* onOffLabel(bool value);
+	static bool isFineAdjustHeld();
+	static void syncMenuScrollWithSelection(int entryCount, int selected);
+	static bool hasConfigFlag(GameConfigFlags flag);
+	static void setConfigFlag(GameConfigFlags flag, bool enabled);
+	static void requestFullscreenState(bool shouldBeFullscreen);
+	static void requestWindowRecreate();
+	static const char* getMusicModeLabel(uint8_t mode);
+	static void cycleMusicMode(int direction);
+	static const char* getDifficultyLabel(uint8_t difficulty);
+	static void cycleDefaultDifficulty(int direction);
+	static void setSfxEnabled(bool enabled);
 
 	static void rebuildMenuModel();
 	static MenuPageDefinition* getPageDefinition(Page page);

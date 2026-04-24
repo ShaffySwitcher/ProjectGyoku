@@ -38,6 +38,7 @@ struct Supervisor
 	GameConfiguration config; // configuration data
 	
 	bool wantFullscreen = false;
+	bool wantWindowRecreate = false;
 	uint32_t currentFrame = 0;
 
 	bool loadConfig(std::string path);

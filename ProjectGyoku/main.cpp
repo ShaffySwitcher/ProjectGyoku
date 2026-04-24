@@ -18,6 +18,7 @@
 #include "resource.h"
 #include "DebugMenu.h"
 #include "Profiler.h"
+#include "Audio.h"
 
 void saveScreenshot();
 
@@ -160,6 +161,8 @@ bool init() {
 		return false;
 	}
 
+	SFXPlayer::init();
+
 #ifdef DEBUG
 	DebugMenu::init();
 #endif
@@ -190,8 +193,25 @@ bool loop() {
 		gSupervisor.wantFullscreen = false;
 	}
 
+	if (gSupervisor.wantWindowRecreate) {
+		if (!requestWindow()) {
+			Log::error("loop(): requestWindow failed during window recreation.");
+		}
+
+		if (ChangeWindowMode(!(gSupervisor.config.flags & static_cast<uint8_t>(GameConfigFlags::FULLSCREEN))) != DX_CHANGESCREEN_OK) {
+			Log::write("loop(): Could not reapply window mode during window recreation.");
+		}
+
+		NativeText::restore();
+		ANMManager::restore();
+		gStateManager.restore();
+
+		gSupervisor.wantWindowRecreate = false;
+	}
+
 	FPS::update();
 	Input::update();
+	SFXPlayer::update();
 
 #ifdef DEBUG
 	DebugMenu::update();
