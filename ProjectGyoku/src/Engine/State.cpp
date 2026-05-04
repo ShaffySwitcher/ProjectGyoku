@@ -1,6 +1,6 @@
-#include "State.h"
-#include "Supervisor.h"
-#include "FPS.h"
+#include "Engine/State.h"
+#include "Engine/Supervisor.h"
+#include "Engine/Math/FPS.h"
 
 StateManager gStateManager;
 

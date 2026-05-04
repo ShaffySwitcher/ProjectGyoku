@@ -1,5 +1,5 @@
-#include "Text.h"
-#include "Log.h"
+#include "Engine/Graphics/Text.h"
+#include "Engine/Log.h"
 
 int NativeText::defaultFontHandle = -1;
 std::shared_ptr<Animation> Text::defaultFontAnimation = nullptr;

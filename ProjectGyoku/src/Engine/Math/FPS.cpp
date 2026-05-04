@@ -1,6 +1,6 @@
-#include "FPS.h"
-#include "Utils.h"
-#include "Global.h"
+#include "Engine/Math/FPS.h"
+#include "Engine/Utils.h"
+#include "Engine/Global.h"
 #include <DxLib.h>
 
 int FPS::targetFPS = 60;

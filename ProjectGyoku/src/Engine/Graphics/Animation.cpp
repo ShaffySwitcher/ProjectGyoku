@@ -1,10 +1,10 @@
-#include "Animation.h"
-#include "Log.h"
-#include "FileManager.h"
+#include "Engine/Graphics/Animation.h"
+#include "Engine/Log.h"
+#include "Engine/FileManager.h"
 
 #include <algorithm>
 #include <unordered_map>
-#include "Sprite.h"
+#include "Engine/Graphics/Sprite.h"
 
 std::map<std::string, std::shared_ptr<Animation>> ANMManager::animations = {};
 std::vector<ANMRunner*> ANMRunner::activeRunners = {};

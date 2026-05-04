@@ -1,10 +1,10 @@
-#include "DebugScene.h"
-#include "Log.h"
-#include "Text.h"
-#include "Animation.h"
-#include "Input.h"
-#include "Utils.h"
-#include "Audio.h"
+#include "Scene/DebugScene.h"
+#include "Engine/Log.h"
+#include "Engine/Graphics/Text.h"
+#include "Engine/Graphics/Animation.h"
+#include "Engine/Input.h"
+#include "Engine/Utils.h"
+#include "Engine/Audio/Audio.h"
 
 void DebugScene::init()
 {

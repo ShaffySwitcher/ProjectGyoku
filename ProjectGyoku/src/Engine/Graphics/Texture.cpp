@@ -1,6 +1,6 @@
-#include "Texture.h"
-#include "Log.h"
-#include "FileManager.h"
+#include "Engine/Graphics/Texture.h"
+#include "Engine/Log.h"
+#include "Engine/FileManager.h"
 
 Texture::~Texture()
 {

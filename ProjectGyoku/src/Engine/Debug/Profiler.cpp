@@ -1,11 +1,11 @@
-#include "Profiler.h"
+#include "Engine/Debug/Profiler.h"
 
 #include <DxLib.h>
 
 #include <algorithm>
 #include <map>
 
-#include "Utils.h"
+#include "Engine/Utils.h"
 
 std::map<std::string, double> frameSamples;
 

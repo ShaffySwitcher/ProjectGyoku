@@ -1,7 +1,7 @@
-#include "Audio.h"
-#include "Log.h"
-#include "Supervisor.h"
-#include "Utils.h"
+#include "Engine/Audio/Audio.h"
+#include "Engine/Log.h"
+#include "Engine/Supervisor.h"
+#include "Engine/Utils.h"
 
 /* ------------------ SFX ------------------ */
 

@@ -1,9 +1,9 @@
-#include "Supervisor.h"
+#include "Engine/Supervisor.h"
 #include <cstdint>
 #include <fstream>
 #include <string>
-#include "Global.h"
-#include "Log.h"
+#include "Engine/Global.h"
+#include "Engine/Log.h"
 
 Supervisor gSupervisor;
 GameManager gGameManager;
