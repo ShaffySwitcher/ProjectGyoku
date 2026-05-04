@@ -25,7 +25,19 @@ public:
 		CONFIGURATION,
 		CONFIGURATION_VIDEO,
 		CONFIGURATION_AUDIO,
-		CONFIGURATION_GAMEPLAY
+		CONFIGURATION_GAMEPLAY,
+		SCORE,
+		SCORE_PSCD,
+		SCORE_PSCD_DIFFICULTY,
+		SCORE_PSCD_STAGE,
+		SCORE_CLRD,
+		SCORE_CLRD_MODE,
+		SCORE_CLRD_DIFFICULTY,
+		SCORE_HSCD,
+		SCORE_HSCD_DIFFICULTY,
+		SCORE_HSCD_RANK,
+		SCORE_SPCD,
+		SCORE_PSTD,
 	};
 
 	static void init();
@@ -66,6 +78,8 @@ private:
 	static void cycleMusicMode(int direction);
 	static const char* getDifficultyLabel(uint8_t difficulty);
 	static void cycleDefaultDifficulty(int direction);
+	static MenuItem createBackMenuItem();
+	static const char* getStageLabel(uint8_t stage);
 	static void setSfxEnabled(bool enabled);
 
 	static void rebuildMenuModel();

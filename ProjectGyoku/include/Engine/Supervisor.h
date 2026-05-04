@@ -39,6 +39,7 @@ struct Supervisor
 	
 	bool wantFullscreen = false;
 	bool wantWindowRecreate = false;
+	bool isInGame = false;
 	uint32_t currentFrame = 0;
 
 	bool loadConfig(std::string path);
@@ -49,6 +50,7 @@ struct Supervisor
 
 struct GameManager {
 	float gameSpeed = 1.0f;
+	uint32_t frame = 0;
 };
 
 extern Supervisor gSupervisor;

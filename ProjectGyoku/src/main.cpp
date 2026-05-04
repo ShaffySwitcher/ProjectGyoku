@@ -1,4 +1,4 @@
-#include "DxLib.h"
+#include <DxLib.h>
 
 #include "Engine/Log.h"
 #include "Engine/Supervisor.h"
@@ -19,6 +19,7 @@
 #include "Engine/Debug/DebugMenu.h"
 #include "Engine/Debug/Profiler.h"
 #include "Engine/Audio/Audio.h"
+#include "Engine/Score.h"
 
 void saveScreenshot();
 
@@ -169,6 +170,8 @@ bool init() {
 
 	FPS::init();
 
+	ScoreManager::load("score.dat");
+
 	Log::write("--- Initialization success! ---");
 
 	return true;
@@ -262,6 +265,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 		{
 			PROFILE_SCOPE("State Update");
 			gStateManager.update();
+			ScoreManager::updatePlaytime(gSupervisor.isInGame);
 		}
 
 		{
@@ -289,6 +293,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 		Profiler::endFrame();
 	}
 
+	ScoreManager::save("score.dat");
+	
 	gSupervisor.saveConfig("pg01.cfg");
 	DxLib_End();
 	Log::close();

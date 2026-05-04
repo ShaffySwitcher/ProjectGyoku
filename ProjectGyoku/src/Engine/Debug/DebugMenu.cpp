@@ -1,5 +1,5 @@
 #include "Engine/Debug/DebugMenu.h"
-#include "DxLib.h"
+#include <DxLib.h>
 #include "Engine/Input.h"
 #include "Engine/Graphics/Animation.h"
 #include "Engine/Audio/Audio.h"
@@ -9,12 +9,21 @@
 #include "Engine/State.h"
 #include "Engine/Supervisor.h"
 #include "Engine/Utils.h"
+#include "Engine/Score.h"
 
 #include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
+struct ScoreMenuContext {
+	int character = 0;
+	int difficulty = 0;
+	int mode = 0;
+};
+
+static ScoreMenuContext gScoreMenuContext{};
 
 bool DebugMenu::isOpen = false;
 bool DebugMenu::isInteractable = false;
@@ -129,6 +138,33 @@ const char* DebugMenu::getDifficultyLabel(uint8_t difficulty)
 	}
 }
 
+const char* DebugMenu::getStageLabel(uint8_t stage)
+{
+	switch (static_cast<Stage>(stage)) {
+	case Stage::STAGE_1:
+		return "STAGE 1";
+	case Stage::STAGE_2:
+		return "STAGE 2";
+	case Stage::STAGE_3:
+		return "STAGE 3";
+	case Stage::STAGE_4:
+		return "STAGE 4";
+	case Stage::STAGE_5:
+		return "STAGE 5";
+	case Stage::STAGE_6:
+		return "STAGE 6";
+	case Stage::EXTRA:
+		return "EXTRA";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+DebugMenu::MenuItem DebugMenu::createBackMenuItem()
+{
+	return { []() { return std::string("< Back"); }, []() { goBack(); }, nullptr };
+}
+
 void DebugMenu::cycleDefaultDifficulty(int direction)
 {
 	int difficulty = clamp(static_cast<int>(gSupervisor.config.defaultDifficulty), static_cast<int>(Difficulty::EASY), static_cast<int>(Difficulty::ILLUSORY));
@@ -169,6 +205,7 @@ void DebugMenu::rebuildMenuModel()
 			{ []() { return std::string("Animation / ANM >"); }, []() { goToSubmenu(Page::ANIMATION); }, nullptr },
 			{ []() { return std::string("Profiler >"); }, []() { goToSubmenu(Page::PROFILER); }, nullptr },
 			{ []() { return std::string("Configuration >"); }, []() { goToSubmenu(Page::CONFIGURATION); }, nullptr },
+			{ []() { return std::string("Score >"); }, []() { goToSubmenu(Page::SCORE); }, nullptr },
 			{ []() { return std::string("Close menu"); }, []() { setOpen(false); }, nullptr }
 		}
 	};
@@ -370,6 +407,490 @@ void DebugMenu::rebuildMenuModel()
 			{ []() { return std::string("< Back"); }, []() { goBack(); }, nullptr }
 		}
 	};
+
+	auto saveScoreData = []() {
+		if (ScoreManager::getCurrentScore()) {
+			ScoreManager::save("score.dat");
+		}
+	};
+
+	menuPages[Page::SCORE] = {
+		"Debug Menu / Score",
+		{
+			{ []() { return std::string("PSCD (Player Stage Clear Data) >"); }, []() { goToSubmenu(Page::SCORE_PSCD); }, nullptr },
+			{ []() { return std::string("CLRD (Clear Data) >"); }, []() { goToSubmenu(Page::SCORE_CLRD); }, nullptr },
+			{ []() { return std::string("HSCD (Highscore Data) >"); }, []() { goToSubmenu(Page::SCORE_HSCD); }, nullptr },
+			{ []() { return std::string("SPCD (Spellcard Data) >"); }, []() { goToSubmenu(Page::SCORE_SPCD); }, nullptr },
+			{ []() { return std::string("PSTD (Gameplay Data) >"); }, []() { goToSubmenu(Page::SCORE_PSTD); }, nullptr },
+			{ []() { return std::string("Save Score Data Now"); }, saveScoreData, nullptr },
+			{ []() { return std::string("Reset Score Data"); }, []() { if (ScoreManager::getCurrentScore()) { ScoreManager::getCurrentScore()->reset(); ScoreManager::save("score.dat"); } }, nullptr },
+			createBackMenuItem()
+		}
+	};
+
+	menuPages[Page::SCORE_PSCD] = {
+		"Debug Menu / Score / PSCD",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			if (!ScoreManager::getCurrentScore()) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				for (int character = 0; character < CHARACTER_COUNT; ++character) {
+					int characterCopy = character;
+					items.push_back({
+						[characterCopy]() -> std::string {
+							return format("Character %d >", characterCopy + 1);
+						},
+						[characterCopy]() {
+							gScoreMenuContext.character = characterCopy;
+							goToSubmenu(Page::SCORE_PSCD_DIFFICULTY);
+						},
+						nullptr
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_PSCD_DIFFICULTY] = {
+		"Debug Menu / Score / PSCD / Difficulty",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			if (!ScoreManager::getCurrentScore()) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				for (int difficulty = 0; difficulty < DIFFICULTY_COUNT; ++difficulty) {
+					int difficultyCopy = difficulty;
+					items.push_back({
+						[difficultyCopy]() -> std::string {
+							return format("%s >", getDifficultyLabel(static_cast<uint8_t>(difficultyCopy)));
+						},
+						[difficultyCopy]() {
+							gScoreMenuContext.difficulty = difficultyCopy;
+							goToSubmenu(Page::SCORE_PSCD_STAGE);
+						},
+						nullptr
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_PSCD_STAGE] = {
+		"Debug Menu / Score / PSCD / Stage",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			const Score* score = ScoreManager::getCurrentScore();
+			if (!score) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				const int character = gScoreMenuContext.character;
+				const int difficulty = gScoreMenuContext.difficulty;
+
+				for (int stage = 0; stage < STAGE_COUNT; ++stage) {
+					int stageCopy = stage;
+					items.push_back({
+						[character, difficulty, stageCopy]() -> std::string {
+							const Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return "(null)";
+							}
+
+							const PSCD& entry = currentScore->playerStageClearData[character][difficulty][stageCopy];
+							return format("%-8s  %u", getStageLabel(static_cast<uint8_t>(stageCopy)), entry.score);
+						},
+						nullptr,
+						[character, difficulty, stageCopy](int direction) {
+							Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return;
+							}
+
+							PSCD& entry = currentScore->playerStageClearData[character][difficulty][stageCopy];
+							const int64_t step = isFineAdjustHeld() ? 1000 : 10000;
+							const int64_t next = static_cast<int64_t>(entry.score) + (static_cast<int64_t>(direction) * step);
+							entry.score = static_cast<uint32_t>(clamp(next, static_cast<int64_t>(0), static_cast<int64_t>(0xFFFFFFFFu)));
+						}
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_CLRD] = {
+		"Debug Menu / Score / CLRD",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			if (!ScoreManager::getCurrentScore()) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				for (int character = 0; character < CHARACTER_COUNT; ++character) {
+					int characterCopy = character;
+					items.push_back({
+						[characterCopy]() -> std::string {
+							return format("Character %d >", characterCopy + 1);
+						},
+						[characterCopy]() {
+							gScoreMenuContext.character = characterCopy;
+							goToSubmenu(Page::SCORE_CLRD_MODE);
+						},
+						nullptr
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_CLRD_MODE] = {
+		"Debug Menu / Score / CLRD / Mode",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			if (!ScoreManager::getCurrentScore()) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				items.push_back({
+					[]() -> std::string { return std::string("No Continues >"); },
+					[]() {
+						gScoreMenuContext.mode = 0;
+						goToSubmenu(Page::SCORE_CLRD_DIFFICULTY);
+					},
+					nullptr
+				});
+
+				items.push_back({
+					[]() -> std::string { return std::string("With Continues >"); },
+					[]() {
+						gScoreMenuContext.mode = 1;
+						goToSubmenu(Page::SCORE_CLRD_DIFFICULTY);
+					},
+					nullptr
+				});
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_CLRD_DIFFICULTY] = {
+		"Debug Menu / Score / CLRD / Difficulty",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			const Score* score = ScoreManager::getCurrentScore();
+			if (!score) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				const int character = gScoreMenuContext.character;
+				const bool withContinues = (gScoreMenuContext.mode != 0);
+
+				for (int difficulty = 0; difficulty < DIFFICULTY_COUNT; ++difficulty) {
+					int difficultyCopy = difficulty;
+					items.push_back({
+						[character, difficultyCopy, withContinues]() -> std::string {
+							const Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return "(null)";
+							}
+
+							const CLRD& entry = currentScore->clearData[character];
+							const uint8_t value = withContinues ? entry.stageClearedWithContinues[difficultyCopy] : entry.stageCleared[difficultyCopy];
+							return format("%-8s  %s", getDifficultyLabel(static_cast<uint8_t>(difficultyCopy)), getStageLabel(value));
+						},
+						nullptr,
+						[character, difficultyCopy, withContinues](int direction) {
+							Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return;
+							}
+
+							CLRD& entry = currentScore->clearData[character];
+							uint8_t& value = withContinues ? entry.stageClearedWithContinues[difficultyCopy] : entry.stageCleared[difficultyCopy];
+							const int next = static_cast<int>(value) + direction;
+							value = static_cast<uint8_t>(clamp(next, 0, static_cast<int>(STAGE_COUNT) - 1));
+						}
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_HSCD] = {
+		"Debug Menu / Score / HSCD",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			if (!ScoreManager::getCurrentScore()) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				for (int character = 0; character < CHARACTER_COUNT; ++character) {
+					int characterCopy = character;
+					items.push_back({
+						[characterCopy]() -> std::string {
+							return format("Character %d >", characterCopy + 1);
+						},
+						[characterCopy]() {
+							gScoreMenuContext.character = characterCopy;
+							goToSubmenu(Page::SCORE_HSCD_DIFFICULTY);
+						},
+						nullptr
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_HSCD_DIFFICULTY] = {
+		"Debug Menu / Score / HSCD / Difficulty",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			if (!ScoreManager::getCurrentScore()) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				for (int difficulty = 0; difficulty < DIFFICULTY_COUNT; ++difficulty) {
+					int difficultyCopy = difficulty;
+					items.push_back({
+						[difficultyCopy]() -> std::string {
+							return format("%s >", getDifficultyLabel(static_cast<uint8_t>(difficultyCopy)));
+						},
+						[difficultyCopy]() {
+							gScoreMenuContext.difficulty = difficultyCopy;
+							goToSubmenu(Page::SCORE_HSCD_RANK);
+						},
+						nullptr
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_HSCD_RANK] = {
+		"Debug Menu / Score / HSCD / Rank",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			const Score* score = ScoreManager::getCurrentScore();
+			if (!score) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				const int character = gScoreMenuContext.character;
+				const int difficulty = gScoreMenuContext.difficulty;
+
+				for (int rank = 0; rank < HIGHSCORE_COUNT; ++rank) {
+					int rankCopy = rank;
+					items.push_back({
+						[character, difficulty, rankCopy]() -> std::string {
+							const Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return "(null)";
+							}
+
+							const HSCD& entry = currentScore->highscores[character][difficulty][rankCopy];
+							char name[9] = {};
+							memcpy(name, entry.name, 8);
+
+							const char* stateLabel = "UNKNOWN";
+							switch (static_cast<HighscoreState>(entry.state)) {
+							case HighscoreState::UNINITIALIZED:
+								stateLabel = "UNINIT";
+								break;
+							case HighscoreState::DEFAULT:
+								stateLabel = "DEFAULT";
+								break;
+							case HighscoreState::USER:
+								stateLabel = "USER";
+								break;
+							}
+
+							return format("#%-2d  %-8s  %u  [%s]", rankCopy + 1, name, entry.score, stateLabel);
+						},
+						nullptr,
+						[character, difficulty, rankCopy](int direction) {
+							Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return;
+							}
+
+							HSCD& entry = currentScore->highscores[character][difficulty][rankCopy];
+							const int64_t step = isFineAdjustHeld() ? 1000 : 10000;
+							const int64_t next = static_cast<int64_t>(entry.score) + (static_cast<int64_t>(direction) * step);
+							entry.score = static_cast<uint32_t>(clamp(next, static_cast<int64_t>(0), static_cast<int64_t>(0xFFFFFFFFu)));
+							entry.state = static_cast<uint8_t>(HighscoreState::USER);
+						}
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_SPCD] = {
+		"Debug Menu / Score / SPCD",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			const Score* score = ScoreManager::getCurrentScore();
+			if (!score) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				for (int spellcard = 0; spellcard < SPELLCARD_COUNT; ++spellcard) {
+					int spellcardCopy = spellcard;
+					items.push_back({
+						[spellcardCopy]() -> std::string {
+							const Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return "(null)";
+							}
+
+							const SPCD& sp = currentScore->spellcards[spellcardCopy];
+							char name[65] = {};
+							memcpy(name, sp.name, 64);
+
+							const float rate = (sp.attempts > 0)
+								? (static_cast<float>(sp.success) / static_cast<float>(sp.attempts) * 100.0f)
+								: 0.0f;
+
+							return format("#%-3d  %-20s  %u/%u (%.0f%%)  score:%u",
+								spellcardCopy + 1,
+								name,
+								static_cast<unsigned>(sp.success),
+								static_cast<unsigned>(sp.attempts),
+								rate,
+								sp.score);
+						},
+						nullptr,
+						[spellcardCopy](int direction) {
+							Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return;
+							}
+
+							SPCD& sp = currentScore->spellcards[spellcardCopy];
+							const int64_t step = isFineAdjustHeld() ? 1000 : 10000;
+							const int64_t next = static_cast<int64_t>(sp.score) + (static_cast<int64_t>(direction) * step);
+							sp.score = static_cast<uint32_t>(clamp(next, static_cast<int64_t>(0), static_cast<int64_t>(0xFFFFFFFFu)));
+						}
+					});
+				}
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
+
+	menuPages[Page::SCORE_PSTD] = {
+		"Debug Menu / Score / PSTD",
+		[]() -> std::vector<MenuItem> {
+			std::vector<MenuItem> items;
+
+			const Score* score = ScoreManager::getCurrentScore();
+			if (!score) {
+				items.push_back({ []() { return std::string("(no score data)"); }, nullptr, nullptr });
+			} else {
+				items.push_back({
+					[]() -> std::string {
+						const Score* currentScore = ScoreManager::getCurrentScore();
+						if (!currentScore) {
+							return "(null)";
+						}
+
+						const PSTD& ps = currentScore->playStats;
+						const uint32_t totalSec = ps.timePlayed.seconds;
+						const uint32_t gameSec = ps.timePlayedGame.seconds;
+						const uint32_t th = totalSec / 3600, tm = (totalSec % 3600) / 60, ts = totalSec % 60;
+						const uint32_t gh = gameSec / 3600, gm = (gameSec % 3600) / 60, gs = gameSec % 60;
+						return format("Total time:  %02u:%02u:%02u  (in-game: %02u:%02u:%02u)", th, tm, ts, gh, gm, gs);
+					},
+					nullptr,
+					nullptr
+				});
+
+				const char* diffLabels[] = { "Easy", "Normal", "Hard", "Illusory", "Extra" };
+				for (int difficulty = 0; difficulty < DIFFICULTY_COUNT; ++difficulty) {
+					int difficultyCopy = difficulty;
+					items.push_back({
+						[difficultyCopy, diffLabels]() -> std::string {
+							const Score* currentScore = ScoreManager::getCurrentScore();
+							if (!currentScore) {
+								return "(null)";
+							}
+
+							const GPLD& g = currentScore->playStats.dataDifficulty[difficultyCopy];
+							uint32_t totalPlays = 0;
+							for (int character = 0; character < CHARACTER_COUNT; ++character) {
+								totalPlays += g.plays[character];
+							}
+
+							return format("%-8s  plays:%u  clears:%u  cont:%u  prac:%u",
+								diffLabels[difficultyCopy],
+								totalPlays,
+								g.clears,
+								g.continues,
+								g.practices);
+						},
+						nullptr,
+						nullptr
+					});
+				}
+
+				items.push_back({
+					[]() -> std::string {
+						const Score* currentScore = ScoreManager::getCurrentScore();
+						if (!currentScore) {
+							return "(null)";
+						}
+
+						const GPLD& g = currentScore->playStats.dataTotal;
+						uint32_t totalPlays = 0;
+						for (int character = 0; character < CHARACTER_COUNT; ++character) {
+							totalPlays += g.plays[character];
+						}
+
+						return format("TOTAL     plays:%u  clears:%u  cont:%u  prac:%u",
+							totalPlays,
+							g.clears,
+							g.continues,
+							g.practices);
+					},
+					nullptr,
+					nullptr
+				});
+			}
+
+			items.push_back(createBackMenuItem());
+			return items;
+		}()
+	};
 }
 
 DebugMenu::MenuPageDefinition* DebugMenu::getPageDefinition(Page page)
@@ -461,6 +982,31 @@ std::string DebugMenu::getLine(Page page, int index)
 
 const char* DebugMenu::getPageTitle(Page page)
 {
+	static std::string dynamicTitle;
+
+	switch (page) {
+	case Page::SCORE_PSCD_DIFFICULTY:
+		dynamicTitle = format("Debug Menu / Score / PSCD / Character %d", gScoreMenuContext.character + 1);
+		return dynamicTitle.c_str();
+	case Page::SCORE_PSCD_STAGE:
+		dynamicTitle = format("Debug Menu / Score / PSCD / Character %d / %s", gScoreMenuContext.character + 1, getDifficultyLabel(static_cast<uint8_t>(gScoreMenuContext.difficulty)));
+		return dynamicTitle.c_str();
+	case Page::SCORE_CLRD_MODE:
+		dynamicTitle = format("Debug Menu / Score / CLRD / Character %d", gScoreMenuContext.character + 1);
+		return dynamicTitle.c_str();
+	case Page::SCORE_CLRD_DIFFICULTY:
+		dynamicTitle = format("Debug Menu / Score / CLRD / Character %d / %s", gScoreMenuContext.character + 1, gScoreMenuContext.mode == 0 ? "No Continues" : "With Continues");
+		return dynamicTitle.c_str();
+	case Page::SCORE_HSCD_DIFFICULTY:
+		dynamicTitle = format("Debug Menu / Score / HSCD / Character %d", gScoreMenuContext.character + 1);
+		return dynamicTitle.c_str();
+	case Page::SCORE_HSCD_RANK:
+		dynamicTitle = format("Debug Menu / Score / HSCD / Character %d / %s", gScoreMenuContext.character + 1, getDifficultyLabel(static_cast<uint8_t>(gScoreMenuContext.difficulty)));
+		return dynamicTitle.c_str();
+	default:
+		break;
+	}
+
 	const MenuPageDefinition* pageDef = getPageDefinition(page);
 	if (!pageDef || !pageDef->title) {
 		return "Debug Menu";

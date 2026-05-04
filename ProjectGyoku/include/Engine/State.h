@@ -6,6 +6,7 @@ class State
 public:
 	virtual ~State() = default;
 	virtual void init() = 0;
+	virtual void destroy() {};
 	virtual void update() = 0;
 	virtual void render() = 0;
 	virtual void restore() = 0;

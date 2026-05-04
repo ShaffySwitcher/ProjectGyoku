@@ -10,6 +10,8 @@
 #include <zlib.h>
 #include <string.h>
 #include <zconf.h>
+#include <Windows.h>
+#include <shlobj.h>
 
 LoadedSHF1* FileManager::archive = nullptr;
 
@@ -61,16 +63,38 @@ void FileBuffer::readBytes(void* buffer, size_t size)
 	offset += size;
 }
 
-std::shared_ptr<FileBuffer> FileManager::loadFile(const std::string& path, bool external)
+std::string FileManager::getAppDataPath(const std::string& path)
 {
+    char appData[MAX_PATH];
+    SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, appData);
+
+    std::string fullPath = std::string(appData) + "\\" 
+                         + APPDATA_MAIN_FOLDER + "\\" 
+                         + APPDATA_GAME_FOLDER + "\\";
+
+    SHCreateDirectoryExA(NULL, fullPath.c_str(), NULL);
+
+    return fullPath + path;
+}
+
+std::shared_ptr<FileBuffer> FileManager::loadFile(const std::string& path, bool external, bool appdata)
+{
+	std::string path_ = path;
 	std::shared_ptr<FileBuffer> fileBuffer = std::make_shared<FileBuffer>();
 
-	if (external || !archive) {
-		fileBuffer->path = path;
+	if(!external && appdata) {
+		Log::error("FileManager::loadFile(): Cannot load file '%s' with appdata flag when not loading from external!", path.c_str());
+	}
 
-		std::ifstream file(path, std::ios::binary);
+	if (external || !archive) {
+		if(appdata) {
+			path_ = getAppDataPath(path_);
+		}
+
+		fileBuffer->path = path_;
+		std::ifstream file(path_, std::ios::binary);
 		if (!file.is_open()) {
-			Log::print("FileManager::loadFile(): Cannot open external file '%s' (does it exist?)", path.c_str());
+			Log::print("FileManager::loadFile(): Cannot open external file '%s' (does it exist?)", path_.c_str());
 			return nullptr;
 		}
 
@@ -80,18 +104,17 @@ std::shared_ptr<FileBuffer> FileManager::loadFile(const std::string& path, bool 
 
 		fileBuffer->data = malloc(fileBuffer->size);
 		if (!fileBuffer->data) {
-			Log::error("FileManager::loadFile(): Memory allocation failed for file '%s' (size: %zu)", path.c_str(), fileBuffer->size);
+			Log::error("FileManager::loadFile(): Memory allocation failed for file '%s' (size: %zu)", path_.c_str(), fileBuffer->size);
 			return nullptr;
 		}
 
 		file.read(static_cast<char*>(fileBuffer->data), fileBuffer->size);
 		file.close();
 
-		Log::print("FileManager::loadFile(): Loaded external file '%s' (size: %zu bytes)", path.c_str(), fileBuffer->size);
+		Log::print("FileManager::loadFile(): Loaded external file '%s' (size: %zu bytes)", path_.c_str(), fileBuffer->size);
 
 		return fileBuffer;
-	}
-	else {
+	} else {
 		std::string actualPath = path;
 		if (actualPath.find("data/") == 0) {
 			actualPath.erase(0, 5);
@@ -141,6 +164,26 @@ std::shared_ptr<FileBuffer> FileManager::loadFile(const std::string& path, bool 
 		Log::print("FileManager::loadFile(): File '%s' not found in SHF1 archive", actualPath.c_str());
 		return nullptr;
 	}
+}
+
+bool FileManager::saveFile(const std::string &path, const void *data, size_t size, bool appdata)
+{
+	std::string path_ = path;
+	if(appdata) {
+		path_ = getAppDataPath(path_);
+	}
+
+	std::ofstream file(path_, std::ios::binary);
+	if (!file.is_open()) {
+		Log::print("FileManager::saveFile(): Cannot open file '%s' for writing!", path_.c_str());
+		return false;
+	}
+
+	file.write(static_cast<const char*>(data), size);
+	file.close();
+
+	Log::print("FileManager::saveFile(): Saved file '%s' (size: %zu bytes)", path_.c_str(), size);
+	return true;
 }
 
 bool FileManager::load(std::string path)

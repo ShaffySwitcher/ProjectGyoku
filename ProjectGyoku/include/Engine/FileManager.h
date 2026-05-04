@@ -9,6 +9,9 @@
 #include <cstdint>
 #include <memory>
 
+#define APPDATA_MAIN_FOLDER "ProjectGyoku"
+#define APPDATA_GAME_FOLDER "SinfulReflections"
+
 struct FileBuffer {
 	FileBuffer() {};
 	~FileBuffer();
@@ -65,9 +68,12 @@ struct LoadedSHF1 {
 
 class FileManager {
 public:
-	static std::shared_ptr<FileBuffer> loadFile(const std::string& path, bool external = false);
+	static std::shared_ptr<FileBuffer> loadFile(const std::string& path, bool external = false, bool appdata = false);
+	static bool saveFile(const std::string& path, const void* data, size_t size, bool appdata = false);
 	static bool load(std::string path);
 
 private:
+	static std::string getAppDataPath(const std::string& path);
+
 	static LoadedSHF1* archive;
 };

@@ -4,18 +4,17 @@
 #include <string>
 #include "Engine/Global.h"
 #include "Engine/Log.h"
+#include "Engine/FileManager.h"
 
 Supervisor gSupervisor;
 GameManager gGameManager;
 
 bool Supervisor::loadConfig(std::string path)
 {
-	std::ifstream file(path, std::ios::binary);
+	std::shared_ptr<FileBuffer> file = FileManager::loadFile(path, true, true);
 
-	if (file) { file.read(reinterpret_cast<char*>(&gSupervisor.config), sizeof(GameConfiguration)); }
+	if (file) { gSupervisor.config = file->read<GameConfiguration>(); }
 	else { setDefaultConfig(); }
-
-	file.close();
 
 	if (!verifyConfig()) {
 		Log::write("Corrupted configuration, creating a new one...");
@@ -27,16 +26,10 @@ bool Supervisor::loadConfig(std::string path)
 
 bool Supervisor::saveConfig(std::string path)
 {
-	std::ofstream file(path, std::ios::binary);
-	if (file.is_open()) {
-		file.write(reinterpret_cast<char*>(&gSupervisor.config), sizeof(GameConfiguration));
-	}
-	else {
-		Log::error("Cannot save configuration data!");
+	if (!FileManager::saveFile(path, &gSupervisor.config, sizeof(GameConfiguration), true)){
+		Log::error("Supervisor::saveConfig(): Cannot save configuration data!");
 		return false;
 	}
-
-	file.close();
 
 	return true;
 }

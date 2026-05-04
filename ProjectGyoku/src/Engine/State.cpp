@@ -31,9 +31,14 @@ void StateManager::restore()
 std::shared_ptr<State> StateManager::setState(std::shared_ptr<State> state)
 {
 	auto oldState = this->state;
+	if (oldState) {
+		oldState->destroy();
+	}
+
 	this->state = state;
 	if (this->state) {
 		this->state->init();
 	}
+
 	return oldState;
 }
