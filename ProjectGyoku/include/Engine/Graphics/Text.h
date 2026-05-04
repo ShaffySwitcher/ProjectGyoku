@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Drawable.h"
-#include "Animation.h"
+#include "Engine/Graphics/Drawable.h"
+#include "Engine/Graphics/Animation.h"
 
 #define TEXT_SP_SYMBOL -128
 #define TEXT_END_SYMBOL -127

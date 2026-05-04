@@ -1,6 +1,6 @@
 #pragma once
-#include "GyokuMath.h"
-#include "Interpolation.h"
+#include "Engine/Math/GyokuMath.h"
+#include "Engine/Math/Interpolation.h"
 
 enum class HorizontalAlign { LEFT, CENTER, RIGHT };
 enum class VerticalAlign { TOP, CENTER, BOTTOM };

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Texture.h"
-#include "Drawable.h"
+#include "Engine/Graphics/Texture.h"
+#include "Engine/Graphics/Drawable.h"
 
 class Background {
 public:

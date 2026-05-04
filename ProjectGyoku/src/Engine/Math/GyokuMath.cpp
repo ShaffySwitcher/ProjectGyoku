@@ -1,6 +1,6 @@
-#include "GyokuMath.h"
+#include "Engine/Math/GyokuMath.h"
 #include <cstdint>
-#include "Supervisor.h"
+#include "Engine/Supervisor.h"
 #include <DxLib.h>
 
 /****************** MATRIX ******************/

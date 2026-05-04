@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GyokuMath.h"
+#include "Engine/Math/GyokuMath.h"
 
 enum class InterpolationMode {
 	LINEAR,

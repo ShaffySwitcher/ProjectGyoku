@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include <DxLib.h>
-#include "Random.h"
+#include "Engine/Math/Random.h"
 #include <ctime>
 #include <cstdint>
 #include <stdexcept>

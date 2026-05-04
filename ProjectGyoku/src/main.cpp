@@ -1,24 +1,24 @@
 #include "DxLib.h"
 
-#include "Log.h"
-#include "Supervisor.h"
+#include "Engine/Log.h"
+#include "Engine/Supervisor.h"
 #include <Windows.h>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include "Global.h"
-#include "FileManager.h"
-#include "Text.h"
-#include "FPS.h"
-#include "State.h"
-#include "DebugScene.h"
-#include "Texture.h"
-#include "Sprite.h"
+#include "Engine/Global.h"
+#include "Engine/FileManager.h"
+#include "Engine/Graphics/Text.h"
+#include "Engine/Math/FPS.h"
+#include "Engine/State.h"
+#include "Scene/DebugScene.h"
+#include "Engine/Graphics/Texture.h"
+#include "Engine/Graphics/Sprite.h"
 #include "resource.h"
-#include "DebugMenu.h"
-#include "Profiler.h"
-#include "Audio.h"
+#include "Engine/Debug/DebugMenu.h"
+#include "Engine/Debug/Profiler.h"
+#include "Engine/Audio/Audio.h"
 
 void saveScreenshot();
 
@@ -102,11 +102,11 @@ bool init() {
 	}
 
 #ifdef DEBUG
-	if (SetMainWindowText("Project Gyoku ~ Sinful Reflections (v1.00a) (Debug Version)") == -1) {
+	if (SetMainWindowText("Project Gyoku ~ Sinful Reflections (v0.01) (Debug Version)") == -1) {
 #elif TRIAL
-	if (SetMainWindowText("Project Gyoku ~ Sinful Reflections (v1.00a) (Trial Version)") == -1) {
+	if (SetMainWindowText("Project Gyoku ~ Sinful Reflections (v0.01) (Trial Version)") == -1) {
 #else
-	if (SetMainWindowText("Project Gyoku ~ Sinful Reflections (v1.00a)") == -1) {
+	if (SetMainWindowText("Project Gyoku ~ Sinful Reflections (v0.01)") == -1) {
 #endif
 		Log::error("init(): SetMainWindowText failed.");
 		return false;

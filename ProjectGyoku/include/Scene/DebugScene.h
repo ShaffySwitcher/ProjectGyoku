@@ -1,9 +1,9 @@
 #pragma once
 
-#include "State.h"
-#include "Text.h"
-#include "Sprite.h"
-#include "Animation.h"
+#include "Engine/State.h"
+#include "Engine/Graphics/Text.h"
+#include "Engine/Graphics/Sprite.h"
+#include "Engine/Graphics/Animation.h"
 
 class DebugScene : public State
 {

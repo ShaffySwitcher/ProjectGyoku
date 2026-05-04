@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <string>
 #include <cstdint>
-#include "Input.h"
+#include "Engine/Input.h"
 
 enum class GameConfigMusicMode : uint8_t {
 	OFF = 0,

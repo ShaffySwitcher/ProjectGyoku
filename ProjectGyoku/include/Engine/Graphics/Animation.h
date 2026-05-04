@@ -6,10 +6,10 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include "Global.h"
-#include "Texture.h"
-#include "Drawable.h"
-#include "AnimationInstructions.h"
+#include "Engine/Global.h"
+#include "Engine/Graphics/Texture.h"
+#include "Engine/Graphics/Drawable.h"
+#include "Engine/Graphics/AnimationInstructions.h"
 
 enum class ANMOpcode : uint8_t {
     NOP = 0,
