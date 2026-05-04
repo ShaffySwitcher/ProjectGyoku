@@ -19,6 +19,8 @@ private:
 	NativeText text;
 
 	int32_t currentScript;
+	
+	bool paused;
 
 	void updateText();
 };

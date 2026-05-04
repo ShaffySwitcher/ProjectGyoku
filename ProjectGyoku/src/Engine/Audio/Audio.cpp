@@ -3,6 +3,106 @@
 #include "Engine/Supervisor.h"
 #include "Engine/Utils.h"
 
+/* ------------------ BGM ------------------ */
+
+int BGMPlayer::handle = -1;
+BGMLoopPoint BGMPlayer::loopPoint = { 0, 0 };
+LONGLONG BGMPlayer::position = 0;
+uint8_t BGMPlayer::volume = 255;
+std::shared_ptr<Interpolator<uint8_t>> BGMPlayer::fadeInterpolator = nullptr;
+
+BGMPlayer::~BGMPlayer()
+{
+    if (handle != -1) {
+        StopSoundMem(handle);
+        DeleteSoundMem(handle);
+        handle = -1;
+    }
+}
+
+void BGMPlayer::update()
+{
+    if(BGMPlayer::fadeInterpolator) {
+        BGMPlayer::fadeInterpolator->update(gSupervisor.currentFrame);
+        volume = BGMPlayer::fadeInterpolator->getValue();
+
+        if (BGMPlayer::fadeInterpolator->isFinished()) { BGMPlayer::fadeInterpolator.reset(); }
+    }
+
+    BGMPlayer::setVolume(static_cast<uint8_t>(volume * (static_cast<float>(gSupervisor.config.bgmVolume) / 100.0f)));
+    BGMPlayer::position = GetCurrentPositionSoundMem(BGMPlayer::handle);
+}
+
+void BGMPlayer::play(const std::string &name, uint8_t volume)
+{
+    BGMPlayer::stop();
+
+    switch(gSupervisor.config.bgmType) {
+        case static_cast<uint8_t>(GameConfigMusicMode::WAV): {
+            std::string path = "wav/" + name + ".wav";
+
+            std::shared_ptr<FileBuffer> bgmFile = FileManager::loadFile(path);
+            if (!bgmFile) {
+                Log::error("BGMPlayer::play(): Failed to load BGM file: %s", path.c_str());
+                return;
+            }
+
+            BGMLoopPoint loopPoint = { 0, 0 };
+            std::shared_ptr<FileBuffer> loopPointFile = FileManager::loadFile("data/music/" + name + ".pos");
+
+            // File may not loop, so no crashes or warnings here
+            if (loopPointFile) {
+                loopPoint.start = loopPointFile->read<uint32_t>();
+                loopPoint.end = loopPointFile->read<uint32_t>();
+            }
+
+            BGMPlayer::handle = LoadSoundMemByMemImage(bgmFile->data, static_cast<int>(bgmFile->size));
+            if (BGMPlayer::handle == -1) {
+                Log::error("BGMPlayer::play(): LoadSoundMemByMemImage failed for BGM: %s", path.c_str());
+                return;
+            }
+
+            BGMPlayer::loopPoint = loopPoint;
+            if(loopPoint.end > 0) {
+                SetLoopAreaSamplePosSoundMem(loopPoint.start, loopPoint.end, BGMPlayer::handle);
+            }
+
+            PlaySoundMem(BGMPlayer::handle, DX_PLAYTYPE_LOOP);
+
+            break;
+        }
+    }
+}
+
+void BGMPlayer::pause()
+{
+    StopSoundMem(BGMPlayer::handle);
+}
+
+void BGMPlayer::resume()
+{
+    PlaySoundMem(BGMPlayer::handle, DX_PLAYTYPE_LOOP);
+    SetCurrentPositionSoundMem(BGMPlayer::position, BGMPlayer::handle);
+}
+
+void BGMPlayer::stop()
+{
+	StopSoundMem(BGMPlayer::handle);
+	DeleteSoundMem(BGMPlayer::handle);
+}
+
+void BGMPlayer::fade(unsigned int duration, uint8_t target)
+{
+    BGMPlayer::fadeInterpolator = std::make_shared<Interpolator<uint8_t>>(volume, gSupervisor.currentFrame, target, gSupervisor.currentFrame + duration);
+}
+
+void BGMPlayer::setVolume(uint8_t volume)
+{
+    if (handle != -1) {
+        ChangeVolumeSoundMem(volume, handle);
+    }
+}
+
 /* ------------------ SFX ------------------ */
 
 const char* getSFXName(SFX type)

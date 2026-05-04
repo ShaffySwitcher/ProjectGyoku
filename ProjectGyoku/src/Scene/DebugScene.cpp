@@ -21,10 +21,30 @@ void DebugScene::init()
 
 	sprite = std::make_shared<Sprite>();
 	anmRunner = std::make_shared<ANMRunner>(ANMManager::load("dummy"), currentScript, sprite);
+
+    BGMPlayer::play("pg01_dummy");
+
+    paused = false;
 }
 
 void DebugScene::update()
 {
+    if(Input::gameInputPressed[static_cast<uint8_t>(GameInput::PAUSE)]) {
+        paused = !paused;
+
+        if(paused == false){
+            BGMPlayer::resume();
+            SFXPlayer::resumeAll();
+        } else {
+            BGMPlayer::pause();
+            SFXPlayer::pauseAll();
+        }
+    }
+
+    if(paused) {
+        return;
+    }
+    
 	int oldScript = currentScript;
 	auto& scripts = ANMManager::load("dummy")->scripts;
 

@@ -211,6 +211,7 @@ bool loop() {
 
 	FPS::update();
 	Input::update();
+	BGMPlayer::update();
 	SFXPlayer::update();
 
 #ifdef DEBUG

@@ -5,9 +5,38 @@
 #include <vector>
 #include <map>
 #include "Engine/FileManager.h"
+#include "Engine/Math/Interpolation.h"
 
 /* ------------------ BGM ------------------ */
 
+struct BGMLoopPoint {
+    uint32_t start;
+    uint32_t end;
+};
+
+class BGMPlayer {
+public:
+    ~BGMPlayer();
+
+    static void update();
+
+    static void play(const std::string& name, uint8_t volume = 255);
+    
+    static void pause();
+    static void resume();
+    static void stop();
+    
+    static void fade(unsigned int duration, uint8_t target = 0);
+
+    static void setVolume(uint8_t volume);
+
+private:
+    static int handle;
+    static BGMLoopPoint loopPoint;
+    static LONGLONG position;
+    static uint8_t volume;
+    static std::shared_ptr<Interpolator<uint8_t>> fadeInterpolator;
+};
 
 /* ------------------ SFX ------------------ */
 
