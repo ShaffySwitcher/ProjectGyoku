@@ -1,4 +1,4 @@
-#include "Math.h"
+#include "GyokuMath.h"
 #include <cstdint>
 #include "Supervisor.h"
 #include <DxLib.h>

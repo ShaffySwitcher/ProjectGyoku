@@ -1,5 +1,5 @@
 #pragma once
-#include "Math.h"
+#include "GyokuMath.h"
 #include "Interpolation.h"
 
 enum class HorizontalAlign { LEFT, CENTER, RIGHT };

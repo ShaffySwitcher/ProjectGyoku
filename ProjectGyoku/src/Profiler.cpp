@@ -7,9 +7,7 @@
 
 #include "Utils.h"
 
-namespace {
-	std::map<std::string, double> frameSamples;
-}
+std::map<std::string, double> frameSamples;
 
 Profiler::Clock::time_point Profiler::frameStart = Profiler::Clock::now();
 bool Profiler::enabled = false;

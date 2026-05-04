@@ -241,7 +241,6 @@ void DebugMenu::rebuildMenuModel()
 				[]() { return std::string("Reload configuration from file"); },
 				[]() {
 					gSupervisor.loadConfig("pg01.cfg");
-					applyRuntimeSfxConfigState();
 				},
 				nullptr
 			},
@@ -250,7 +249,6 @@ void DebugMenu::rebuildMenuModel()
 				[]() { return std::string("Reset to default configuration"); },
 				[]() {
 					gSupervisor.setDefaultConfig();
-					applyRuntimeSfxConfigState();
 				},
 				nullptr
 			},
@@ -344,7 +342,6 @@ void DebugMenu::rebuildMenuModel()
 					const int step = isFineAdjustHeld() ? 1 : 5;
 					volume = clamp(volume + (direction * step), 0, 100);
 					gSupervisor.config.sfxVolume = static_cast<uint8_t>(volume);
-					applyRuntimeSfxConfigState();
 				}
 			},
 			{ []() { return std::string("< Back"); }, []() { goBack(); }, nullptr }
