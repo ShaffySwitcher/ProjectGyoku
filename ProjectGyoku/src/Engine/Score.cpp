@@ -2,6 +2,7 @@
 #include "Engine/Log.h"
 #include "Engine/FileManager.h"
 #include "Engine/Math/GyokuMath.h"
+#include "Engine/Supervisor.h"
 #include <vector>
 
 Score *ScoreManager::currentScore = nullptr;
@@ -132,7 +133,7 @@ void ScoreManager::crypt(uint8_t *data, size_t size, uint8_t key)
     }
 } 
 
-void ScoreManager::updatePlaytime(bool inGame)
+void ScoreManager::updatePlaytime()
 {
     static int lastUpdateMS = GetNowCount();
     static uint32_t accumulatedMS = 0;
@@ -153,7 +154,7 @@ void ScoreManager::updatePlaytime(bool inGame)
         accumulatedMS -= 1000;
         currentScore->playStats.timePlayed += 1;
 
-        if (inGame) {
+        if (gSupervisor.isInGame) {
             currentScore->playStats.timePlayedGame += 1;
         }
     }

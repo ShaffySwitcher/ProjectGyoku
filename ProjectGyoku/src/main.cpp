@@ -12,7 +12,7 @@
 #include "Engine/Graphics/Text.h"
 #include "Engine/Math/FPS.h"
 #include "Engine/State.h"
-#include "Scene/DebugScene.h"
+#include "Scene/Game.h"
 #include "Engine/Graphics/Texture.h"
 #include "Engine/Graphics/Sprite.h"
 #include "resource.h"
@@ -241,7 +241,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 		return 1;
 	}
 
-	gStateManager.setState(std::make_shared<DebugScene>());
+	gStateManager.setState(std::make_shared<Game>());
 
 	while (true) {
 		Profiler::beginFrame();
@@ -265,7 +265,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 		{
 			PROFILE_SCOPE("State Update");
 			gStateManager.update();
-			ScoreManager::updatePlaytime(gSupervisor.isInGame);
+			ScoreManager::updatePlaytime();
 		}
 
 		{

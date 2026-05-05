@@ -127,7 +127,7 @@ class ScoreManager {
 public:
     static void load(const std::string& path);
     static void save(const std::string& path);
-    static void updatePlaytime(bool inGame);
+    static void updatePlaytime();
     static Score* getCurrentScore();
 
 private:

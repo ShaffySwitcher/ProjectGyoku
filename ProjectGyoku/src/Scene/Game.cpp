@@ -4,6 +4,8 @@
 void Game::init() {
     gSupervisor.isInGame = true;
     // Strategy here is to load all necessary resources common to every stage, etc...
+
+    
 }
 
 void Game::destroy() {

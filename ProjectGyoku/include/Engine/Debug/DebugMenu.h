@@ -2,95 +2,104 @@
 
 #include <cstdint>
 #include <functional>
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
-#include "Engine/Audio/Audio.h"
 #include "Engine/Supervisor.h"
-
-#define MENU_MAX_VISIBLE_ENTRIES 11
-#define MENU_LINE_HEIGHT 24
-#define MENU_FIRST_LINE_Y 120
 
 class DebugMenu
 {
 public:
-	enum class Page {
-		ROOT,
-		RUNTIME,
-		ANIMATION,
-		PROFILER,
-		CONFIGURATION,
-		CONFIGURATION_VIDEO,
-		CONFIGURATION_AUDIO,
-		CONFIGURATION_GAMEPLAY,
-		SCORE,
-		SCORE_PSCD,
-		SCORE_PSCD_DIFFICULTY,
-		SCORE_PSCD_STAGE,
-		SCORE_CLRD,
-		SCORE_CLRD_MODE,
-		SCORE_CLRD_DIFFICULTY,
-		SCORE_HSCD,
-		SCORE_HSCD_DIFFICULTY,
-		SCORE_HSCD_RANK,
-		SCORE_SPCD,
-		SCORE_PSTD,
-	};
+    static void init();
+    static void update();
+    static void render();
+    static void setOpen(bool open);
 
-	static void init();
-	void static update();
-	void static render();
-	static void setOpen(bool open);
+    static bool isOpen;
 
 private:
-	struct MenuItem {
-		std::function<std::string()> label;
-		std::function<void()> onActivate;
-		std::function<void(int)> onAdjust;
-	};
+    struct Entry
+    {
+        enum class Kind { Nav, Value, Action };
 
-	struct MenuPageDefinition {
-		const char* title = "Debug Menu";
-		std::vector<MenuItem> items{};
-	};
+        Kind kind;
+        std::function<std::string()> label;
+        std::function<void()> navigate;
+        std::function<void(int)> adjust;
+        std::function<void()> activate;
 
-	static Page currentPage;
-	static std::vector<Page> pageStack;
-	static std::map<Page, MenuPageDefinition> menuPages;
-	static int selectedIndex;
-	static int debugTargetFPS;
-	static int menuScrollOffset;
+        static Entry nav(std::function<std::string()> label, std::function<void()> navigate);
+        static Entry value(std::function<std::string()> label, std::function<void(int)> adjust);
+        static Entry action(std::function<std::string()> label, std::function<void()> activate);
+        static Entry back();
+    };
 
-	static bool isOpen;
-	static bool isInteractable;
+    struct Page
+    {
+        std::string title;
+        std::vector<Entry> entries;
+    };
 
-	static const char* onOffLabel(bool value);
-	static bool isFineAdjustHeld();
-	static void syncMenuScrollWithSelection(int entryCount, int selected);
-	static bool hasConfigFlag(GameConfigFlags flag);
-	static void setConfigFlag(GameConfigFlags flag, bool enabled);
-	static void requestFullscreenState(bool shouldBeFullscreen);
-	static void requestWindowRecreate();
-	static const char* getMusicModeLabel(uint8_t mode);
-	static void cycleMusicMode(int direction);
-	static const char* getDifficultyLabel(uint8_t difficulty);
-	static void cycleDefaultDifficulty(int direction);
-	static MenuItem createBackMenuItem();
-	static const char* getStageLabel(uint8_t stage);
-	static void setSfxEnabled(bool enabled);
+    using PageFactory = std::function<Page()>;
 
-	static void rebuildMenuModel();
-	static MenuPageDefinition* getPageDefinition(Page page);
-	static int getEntryCount(Page page);
-	static void resetSelection();
-	static void goToSubmenu(Page page);
-	static void goBack();
-	static void adjustCurrentOption(int direction);
-	static void activateCurrentOption();
-	static std::string getLine(Page page, int index);
-	static const char* getPageTitle(Page page);
+    static std::vector<Page> pageStack;
+    static std::vector<PageFactory> factoryStack;
+
+    static int selectedIndex;
+    static int scrollOffset;
+    static int debugTargetFPS;
+    static bool isInteractable;
+
+    static void push(PageFactory factory);
+    static void pop();
+    static Page& current();
+
+    static void resetSelection();
+    static void syncScroll();
+
+    static bool isFineAdjustHeld();
+
+    static const char* onOffLabel(bool value);
+    static const char* musicModeLabel(uint8_t mode);
+    static const char* difficultyLabel(uint8_t difficulty);
+    static const char* stageLabel(uint8_t stage);
+    static std::string characterLabel(uint8_t character);
+
+    static bool hasFlag(GameConfigFlags flag);
+    static void setFlag(GameConfigFlags flag, bool enabled);
+    static void requestFullscreen(bool enabled);
+    static void requestWindowRecreate();
+    static void cycleMusicMode(int direction);
+    static void cycleDefaultDifficulty(int direction);
+    static void setSfxEnabled(bool enabled);
+
+    static PageFactory makeRoot();
+    static PageFactory makeRuntime();
+    static PageFactory makeAnimation();
+    static PageFactory makeProfiler();
+    static PageFactory makeConfiguration();
+    static PageFactory makeConfigVideo();
+    static PageFactory makeConfigAudio();
+    static PageFactory makeConfigGameplay();
+
+    static PageFactory makeScore();
+    static PageFactory makeScorePSCD();
+    static PageFactory makeScorePSCDDifficulty(int character);
+    static PageFactory makeScorePSCDStage(int character, int difficulty);
+    static PageFactory makeScoreCLRD();
+    static PageFactory makeScoreCLRDMode(int character);
+    static PageFactory makeScoreCLRDDifficulty(int character, bool withContinues);
+    static PageFactory makeScoreHSCD();
+    static PageFactory makeScoreHSCDDifficulty(int character);
+    static PageFactory makeScoreHSCDRank(int character, int difficulty);
+    static PageFactory makeScoreSPCD();
+    static PageFactory makeScorePSTD();
+
+    static PageFactory makeGame();
+    static PageFactory makeGameConfiguration();
+    static PageFactory makeGameStats();
+
+    static constexpr int MAX_VISIBLE = 11;
+    static constexpr int LINE_H = 24;
+    static constexpr int FIRST_LINE_Y = 120;
 };
-

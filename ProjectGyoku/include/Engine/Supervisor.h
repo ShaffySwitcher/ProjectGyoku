@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdint>
 #include "Engine/Input.h"
+#include "Engine/Global.h"
 
 enum class GameConfigMusicMode : uint8_t {
 	OFF = 0,
@@ -51,6 +52,9 @@ struct Supervisor
 struct GameManager {
 	float gameSpeed = 1.0f;
 	uint32_t frame = 0;
+	uint8_t character = static_cast<uint8_t>(Character::LLOYD) * static_cast<uint8_t>(ShotType::COUNT) + static_cast<uint8_t>(ShotType::SHOT_TYPE_A);
+	uint8_t difficulty = static_cast<uint8_t>(Difficulty::NORMAL);
+	uint8_t stage = static_cast<uint8_t>(Stage::STAGE_1);
 };
 
 extern Supervisor gSupervisor;
