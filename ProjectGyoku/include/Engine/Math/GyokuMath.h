@@ -294,10 +294,18 @@ public:
 	float getSubframe() const { return subframe; }
 	float getFrameF() const { return static_cast<float>(frame) + subframe; }
 
-	void advance(int amount = 1) { frame += amount; } // force advance by one frame
+	void advance(int amount = 1) { frame += amount; }
+
+	Timer& operator++();
+	Timer  operator++(int);
+	Timer& operator--();
+	Timer  operator--(int);
 
 	void operator=(unsigned int const& rhs) { this->frame = rhs; this->subframe = 0; }
 
+	bool operator==(unsigned int const& rhs) const { return this->frame == rhs && this->subframe == 0; }
+	bool operator>(unsigned int const& rhs) const { return this->frame > rhs || (this->frame == rhs && this->subframe > 0); }
+	bool operator<(unsigned int const& rhs) const { return this->frame < rhs || (this->frame == rhs && this->subframe < 0); }
 private:
 	unsigned int frame;
 	float subframe;

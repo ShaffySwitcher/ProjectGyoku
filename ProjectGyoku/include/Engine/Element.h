@@ -19,7 +19,7 @@ public:
     Vector getOffset() const { return offset; }
     bool isRemoved() const { return removed; }
 
-private:
+protected:
     std::shared_ptr<Drawable> drawable = nullptr;
     std::shared_ptr<ANMRunner> runner = nullptr;
 

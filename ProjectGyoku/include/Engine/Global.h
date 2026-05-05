@@ -17,6 +17,9 @@
 #define SHOT_TYPE_COUNT static_cast<uint8_t>(ShotType::COUNT)
 #define CHARACTER_COUNT static_cast<uint8_t>(Character::COUNT) * SHOT_TYPE_COUNT
 
+#define TO_FRAMES(seconds) (static_cast<int>((seconds) * 60))
+#define TO_SECONDS(frames) (static_cast<float>((frames)) / 60.0f)
+
 enum class Difficulty : uint8_t {
 	EASY,
 	NORMAL,

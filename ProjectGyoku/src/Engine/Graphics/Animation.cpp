@@ -12,7 +12,7 @@ std::vector<ANMRunner*> ANMRunner::activeRunners = {};
 const std::map<std::string, std::string> animationPaths = {
 	{ "dummy", "data/dummy.anm" },
 	{ "text", "data/text/text.anm" },
-	{ "player", "data/player/player.anm" }
+	{ "player00", "data/player/player00.anm" }
 };
 
 std::shared_ptr<Animation> Animation::loadFromFile(const std::string& path, bool loadTexture)
@@ -347,7 +347,7 @@ bool ANMRunner::step()
 			instructionIndex++;
 		}
 
-		if (instr->time == this->frame.getFrame()) {
+		if (instr->time <= this->frame.getFrame()) {
 			switch (instr->opcode) {
 				case ANMOpcode::NOP:
 					break;

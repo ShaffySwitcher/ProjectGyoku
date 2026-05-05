@@ -360,3 +360,25 @@ void Timer::reset(unsigned int startFrame) {
 	frame = startFrame;
 	subframe = 0.0f;
 }
+
+Timer& Timer::operator++() {
+    accumulate(1.0f);
+    return *this;
+}
+
+Timer Timer::operator++(int) {
+    Timer temp = *this;
+    accumulate(1.0f);
+    return temp;
+}
+
+Timer& Timer::operator--() {
+    accumulate(-1.0f);
+    return *this;
+}
+
+Timer Timer::operator--(int) {
+    Timer temp = *this;
+    accumulate(-1.0f);
+    return temp;
+}

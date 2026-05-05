@@ -189,6 +189,7 @@ SFXPlayer::~SFXPlayer()
 void SFXPlayer::init()
 {
     load(SFX::DUMMY, "data/sound/dummy.wav");
+    load(SFX::PAUSE, "data/sound/pause.wav");
 }
 
 void SFXPlayer::load(const SFX type, const std::string &path)

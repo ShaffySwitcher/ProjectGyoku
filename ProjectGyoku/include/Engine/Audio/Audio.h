@@ -42,6 +42,7 @@ private:
 
 enum class SFX {
     DUMMY,
+    PAUSE,
     COUNT
 };
 

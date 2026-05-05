@@ -59,6 +59,15 @@ uint16_t Score::calculateChecksum() const
     return checksum;
 }
 
+uint32_t Score::getStageHighscore(uint8_t character, uint8_t difficulty, uint8_t stage) const
+{
+    if (character >= CHARACTER_COUNT || difficulty >= DIFFICULTY_COUNT || stage >= STAGE_COUNT) {
+        return 0;
+    }
+
+    return this->playerStageClearData[character][difficulty][stage].score;
+}
+
 uint32_t Score::getHighscore(uint8_t character, uint8_t difficulty) const
 {
     uint32_t highscore = DEFAULT_HIGHSCORE;

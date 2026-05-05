@@ -5,6 +5,7 @@
 #include <cstdint>
 #include "Engine/Input.h"
 #include "Engine/Global.h"
+#include "Engine/Math/Random.h"
 
 enum class GameConfigMusicMode : uint8_t {
 	OFF = 0,
@@ -50,11 +51,43 @@ struct Supervisor
 };
 
 struct GameManager {
+	GameManager() : rng(randomSeed) {}
+
 	float gameSpeed = 1.0f;
+	int gameSurface;
 	uint32_t frame = 0;
-	uint8_t character = static_cast<uint8_t>(Character::LLOYD) * static_cast<uint8_t>(ShotType::COUNT) + static_cast<uint8_t>(ShotType::SHOT_TYPE_A);
+
+	uint32_t shownScore = 0;
+	uint32_t score = 0;
+	uint32_t highscore = 0;
+
+	uint8_t character = static_cast<uint8_t>(Character::LLOYD) * SHOT_TYPE_COUNT + static_cast<uint8_t>(ShotType::SHOT_TYPE_A);
 	uint8_t difficulty = static_cast<uint8_t>(Difficulty::NORMAL);
 	uint8_t stage = static_cast<uint8_t>(Stage::STAGE_1);
+	
+	uint8_t startingLives, startingBombs;
+	uint8_t lives;
+	uint8_t deaths, continuesUsed;
+	uint8_t bombs, bombsUsed;
+	uint8_t power, powerBonus;
+	uint8_t points, pointsTotal;
+	uint16_t graze, grazeTotal;
+	uint8_t spellcardsCaptured;
+	
+	bool inPracticeMode = false; // use PSCD highscore and quit to menu after stage clear
+	bool inDemoMode = false; // play default replay and timeout after a while
+	bool inReplayMode = false; // disable inputs and allow framerate change
+	bool isTimeStopped = false; // self-explantory
+	bool inRetryMenu = false; // X continues left, wanna retry?
+	bool inPauseMenu = false; // pause menu active
+	bool isGameCompleted = false; // full game clear
+	uint32_t demoFrames = 0;
+
+	uint16_t enemyNextItem = 0;		// this is the index of the next item to spawn
+	uint16_t enemyDeathCount = 0;   // if this % 3 == 0, then spawn a random item
+	
+	uint32_t randomSeed = -1;
+	RNG rng;
 };
 
 extern Supervisor gSupervisor;

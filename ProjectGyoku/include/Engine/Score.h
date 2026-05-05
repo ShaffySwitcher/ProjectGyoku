@@ -117,6 +117,7 @@ struct Score {
 
     void reset();
     uint16_t calculateChecksum() const;
+    uint32_t getStageHighscore(uint8_t character, uint8_t difficulty, uint8_t stage) const;
     uint32_t getHighscore(uint8_t character, uint8_t difficulty) const;
     bool hasUnlockedExtra(uint8_t character) const;
 };
