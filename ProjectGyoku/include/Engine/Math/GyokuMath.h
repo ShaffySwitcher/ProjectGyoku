@@ -281,7 +281,6 @@ class Timer {
 public:
 	Timer();
 
-	void step();
 	void step(float delta);
 
 	void accumulate(float delta);
@@ -304,8 +303,13 @@ public:
 	void operator=(unsigned int const& rhs) { this->frame = rhs; this->subframe = 0; }
 
 	bool operator==(unsigned int const& rhs) const { return this->frame == rhs && this->subframe == 0; }
-	bool operator>(unsigned int const& rhs) const { return this->frame > rhs || (this->frame == rhs && this->subframe > 0); }
-	bool operator<(unsigned int const& rhs) const { return this->frame < rhs || (this->frame == rhs && this->subframe < 0); }
+	bool operator!=(unsigned int const& rhs) const { return !(*this == rhs); }
+
+	bool operator>(unsigned int const& rhs) const { return this->frame > rhs || (this->frame == rhs && this->subframe > 0.0f); }
+	bool operator<(unsigned int const& rhs) const { return this->frame < rhs; }
+
+	bool operator>=(unsigned int const& rhs) const { return !(*this < rhs); }
+	bool operator<=(unsigned int const& rhs) const { return !(*this > rhs); }
 private:
 	unsigned int frame;
 	float subframe;

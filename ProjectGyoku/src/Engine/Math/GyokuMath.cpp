@@ -330,10 +330,6 @@ bool Collision::rectangleInRectangle(Rect a, Rect b)
 
 Timer::Timer() : frame(0), subframe(0.0f) {}
 
-void Timer::step() {
-	accumulate(gGameManager.gameSpeed);
-}
-
 void Timer::step(float delta) {
 	accumulate(delta);
 }
@@ -350,7 +346,8 @@ void Timer::consume() {
 		subframe -= static_cast<float>(add);
 	}
 
-	while (subframe < 0.0f && frame > 0) {
+	while (subframe < 0.0f) {
+		if (frame == 0) { subframe = 0.0f; break; }
 		frame -= 1;
 		subframe += 1.0f;
 	}
@@ -362,23 +359,23 @@ void Timer::reset(unsigned int startFrame) {
 }
 
 Timer& Timer::operator++() {
-    accumulate(1.0f);
+    accumulate(gGameManager.gameSpeed);
     return *this;
 }
 
 Timer Timer::operator++(int) {
     Timer temp = *this;
-    accumulate(1.0f);
+    accumulate(gGameManager.gameSpeed);
     return temp;
 }
 
 Timer& Timer::operator--() {
-    accumulate(-1.0f);
+    accumulate(-gGameManager.gameSpeed);
     return *this;
 }
 
 Timer Timer::operator--(int) {
     Timer temp = *this;
-    accumulate(-1.0f);
+    accumulate(-gGameManager.gameSpeed);
     return temp;
 }

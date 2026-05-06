@@ -7,8 +7,7 @@ class Element {
 public:
     Element(Vector position = Vector(0, 0, 0));
     virtual ~Element() = default;
-
-    virtual void update() = 0;
+    
     virtual void render();
 
     void setPosition(const Vector& position) { this->position = position; }

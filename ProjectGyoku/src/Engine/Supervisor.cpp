@@ -17,7 +17,7 @@ bool Supervisor::loadConfig(std::string path)
 	else { setDefaultConfig(); }
 
 	if (!verifyConfig()) {
-		Log::write("Corrupted configuration, creating a new one...");
+		Log::write("Supervisor::loadConfig(): Corrupted configuration, creating a new one...");
 		setDefaultConfig();
 	}
 

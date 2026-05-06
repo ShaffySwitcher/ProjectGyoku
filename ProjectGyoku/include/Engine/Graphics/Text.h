@@ -79,10 +79,10 @@ public:
 
 	void render(Vector position = GetVector(0.0f, 0.0f, 0.0f));
 
-	static std::shared_ptr<Animation> defaultFontAnimation;
+	static std::shared_ptr<ANM> defaultFontAnimation;
 
 private:
-	std::shared_ptr<Animation> fontAnimation;
+	std::shared_ptr<ANM> fontAnimation;
 	int xSpacing;
 	unsigned int shift;
 };

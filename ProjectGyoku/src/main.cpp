@@ -1,25 +1,12 @@
-#include <DxLib.h>
-
-#include "Engine/Log.h"
-#include "Engine/Supervisor.h"
-#include <Windows.h>
-#include <fstream>
-#include <iomanip>
-#include <sstream>
-#include <string>
-#include "Engine/Global.h"
-#include "Engine/FileManager.h"
-#include "Engine/Graphics/Text.h"
-#include "Engine/Math/FPS.h"
-#include "Engine/State.h"
-#include "Scene/Game.h"
-#include "Engine/Graphics/Texture.h"
-#include "Engine/Graphics/Sprite.h"
-#include "resource.h"
+#include "Engine/Audio/Audio.h"
 #include "Engine/Debug/DebugMenu.h"
 #include "Engine/Debug/Profiler.h"
-#include "Engine/Audio/Audio.h"
+#include "Engine/Math/FPS.h"
+#include "Engine/Log.h"
 #include "Engine/Score.h"
+#include "Engine/Utils.h"
+#include "Scene/Game.h"
+#include "resource.h"
 
 void saveScreenshot();
 
@@ -306,7 +293,7 @@ void saveScreenshot() {
 	DWORD ftyp = GetFileAttributesA("screenshots");
 	if (ftyp == INVALID_FILE_ATTRIBUTES) {
 		if (!CreateDirectoryA("screenshots", NULL)) {
-			Log::write("Failed to create \"screenshots\" directory!");
+			Log::write("saveScreenshot(): Failed to create \"screenshots\" directory!");
 			return;
 		}
 	}
@@ -315,19 +302,16 @@ void saveScreenshot() {
 	int screenshotIndex = 0;
 
 	while (true) {
-		std::ostringstream oss;
-		oss << "screenshots/pg_" << std::setw(3) << std::setfill('0') << screenshotIndex << ".bmp";
-		screenshotPath = oss.str();
+		screenshotPath = format("screenshots/pg_%03d.png", screenshotIndex);
 
-		std::ifstream screenshotFile(screenshotPath);
+		auto screenshotFile = FileManager::loadFile(screenshotPath);
 		if (!screenshotFile) {
 			break;
 		}
 
-		screenshotFile.close();
 		screenshotIndex++;
 	}
 
-	SaveDrawScreen(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, screenshotPath.c_str());
-	Log::write("Screenshot saved to %s!", screenshotPath.c_str());
+	SaveDrawScreen(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, screenshotPath.c_str(), DX_IMAGESAVETYPE_PNG);
+	Log::write("saveScreenshot(): Screenshot saved to %s!", screenshotPath.c_str());
 }

@@ -2,8 +2,11 @@
 
 #include "Engine/Element.h"
 #include "Engine/Graphics/Sprite.h"
-#include "Engine/Game/Format/SHT.h"
+#include "Engine/Format/SHT.h"
+#include "Engine/Game/Effect.h"
 #include "Scene/Game.h"
+#include <array>
+
 
 class Game;
 
@@ -26,17 +29,20 @@ enum class PlayerDirection {
 	PLAYER_DIRECTION_RIGHT
 };
 
+class Player;
+
 class Player : public Element {
 public:
-    Player(std::shared_ptr<Animation> animation, const SHT& sht);
+    Player(std::shared_ptr<ANM> animation, const SHT& sht);
 
-	virtual void update() override;
+	void update();
 	virtual void render() override;
+	void renderHitbox();
 
 	void setGame(Game* game) { this->game = game; }
 private:
 	Game* game;
-	std::shared_ptr<Animation> animation;
+	std::shared_ptr<ANM> animation;
 	SHT sht;
 	PlayerState state;
 	PlayerDirection direction;
@@ -47,6 +53,13 @@ private:
 
 	bool focused = false;
 
+	std::array<std::unique_ptr<Effect>, 2> orbs;
+	std::array<std::unique_ptr<Effect>, 3> hitbox;
+
+	std::unique_ptr<Interpolator<Vector>> orbInterpolator;
+
 	void setAnim(uint32_t id);
+	void startFocusing();
+	void stopFocusing();
 	void fire();
 };

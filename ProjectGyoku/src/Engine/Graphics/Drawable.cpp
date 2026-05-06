@@ -1,9 +1,10 @@
 #include "Engine/Graphics/Drawable.h"
+#include "Engine/Supervisor.h"
 
 void Drawable::update()
 {
 	if (this->rotationSpeed.x || this->rotationSpeed.y || this->rotationSpeed.z) {
-		this->rotation += this->rotationSpeed;
+		this->rotation += this->rotationSpeed * gGameManager.gameSpeed;
 	}
 	else if (this->rotationInterpolator) {
 		this->rotationInterpolator->update(this->frame.getFrame());
@@ -14,7 +15,7 @@ void Drawable::update()
 	}
 
 	if (this->scaleSpeed.x || this->scaleSpeed.y) {
-		this->scale += this->scaleSpeed;
+		this->scale += this->scaleSpeed * gGameManager.gameSpeed;
 	}
 	else if(this->scaleInterpolator) {
 		this->scaleInterpolator->update(this->frame.getFrame());
@@ -25,7 +26,7 @@ void Drawable::update()
 	}
 
 	if (this->offsetSpeed.x || this->offsetSpeed.y || this->offsetSpeed.z) {
-		this->offset += this->offsetSpeed;
+		this->offset += this->offsetSpeed * gGameManager.gameSpeed;
 	} else if (this->offsetInterpolator) {
 		this->offsetInterpolator->update(this->frame.getFrame());
 		this->offset = this->offsetInterpolator->getValue();
@@ -50,7 +51,7 @@ void Drawable::update()
 		}
 	}
 
-	this->frame.step();
+	this->frame++;
 }
 
 void Drawable::fade(unsigned int duration, uint8_t alpha, InterpolationMode mode)

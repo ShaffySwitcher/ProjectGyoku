@@ -3,8 +3,7 @@
 #include "Engine/Score.h"
 #include "Engine/Math/FPS.h"
 #include "Engine/Audio/Audio.h"
-
-#include "Engine/Game/Format/SHT.h"
+#include "Engine/Format/SHT.h"
 
 void Game::init() {
     BGMPlayer::stop();
@@ -205,12 +204,15 @@ void Game::render() {
     // -- Cancelled Bullets --
     // -- Items --
     // -- Hitbox --
+    if(this->player) { this->player->renderHitbox(); }
     // -- Labels --
     // -- MSG --
     // -- Interface --
 
     // --- Main Surface ---
     SetDrawScreen(DX_SCREEN_BACK);
+
+    DrawBox(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GetColor(30, 30, 30), TRUE);
 
     DrawGraph(GAME_REGION_X, GAME_REGION_Y, gGameManager.gameSurface, FALSE);
 }

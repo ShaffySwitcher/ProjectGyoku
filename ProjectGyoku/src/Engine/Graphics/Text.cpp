@@ -2,7 +2,7 @@
 #include "Engine/Log.h"
 
 int NativeText::defaultFontHandle = -1;
-std::shared_ptr<Animation> Text::defaultFontAnimation = nullptr;
+std::shared_ptr<ANM> Text::defaultFontAnimation = nullptr;
 
 TextBase::TextBase(Vector position, std::string text, TextAlign align)
 {

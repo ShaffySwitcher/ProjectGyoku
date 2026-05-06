@@ -21,7 +21,7 @@ std::string fmt_str(const char* format, va_list args)
 	char buffer[MAX_FMT_STR_LEN]{};
 
 	if (strlen(format) >= MAX_FMT_STR_LEN) {
-		Log::write("fmt_str: format string too long! (expected <%i, got %i)", MAX_FMT_STR_LEN, strlen(format));
+		Log::write("fmt_str(): format string too long! (expected <%i, got %i)", MAX_FMT_STR_LEN, strlen(format));
 	}
 	else {
 		vsnprintf_s(buffer, sizeof(buffer), format, args);
