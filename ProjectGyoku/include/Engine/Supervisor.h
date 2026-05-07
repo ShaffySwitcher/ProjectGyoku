@@ -55,6 +55,7 @@ struct GameManager {
 
 	float gameSpeed = 1.0f;
 	int gameSurface;
+	int gameInterfaceSurface;
 	uint32_t frame = 0;
 
 	uint32_t shownScore = 0;
@@ -66,11 +67,11 @@ struct GameManager {
 	uint8_t stage = static_cast<uint8_t>(Stage::STAGE_1);
 	
 	uint8_t startingLives, startingBombs;
-	uint8_t lives;
+	int8_t lives;
 	uint8_t deaths, continuesUsed;
 	uint8_t bombs, bombsUsed;
 	uint8_t power, powerBonus;
-	uint8_t points, pointsTotal;
+	uint16_t points, pointsTotal;
 	uint16_t graze, grazeTotal;
 	uint8_t spellcardsCaptured;
 	

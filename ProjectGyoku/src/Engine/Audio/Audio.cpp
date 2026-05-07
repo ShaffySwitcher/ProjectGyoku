@@ -105,18 +105,6 @@ void BGMPlayer::setVolume(uint8_t volume)
 
 /* ------------------ SFX ------------------ */
 
-const char* getSFXName(SFX type)
-{
-    switch (type) {
-    case SFX::DUMMY:
-        return "DUMMY";
-    case SFX::COUNT:
-        return "COUNT";
-    default:
-        return "UNKNOWN";
-    }
-}
-
 // ------ PlayingSFX ------
 
 PlayingSFX::~PlayingSFX()
@@ -190,6 +178,9 @@ void SFXPlayer::init()
 {
     load(SFX::DUMMY, "data/sound/dummy.wav");
     load(SFX::PAUSE, "data/sound/pause.wav");
+    load(SFX::EXTEND, "data/sound/extend.wav");
+    load(SFX::DEATH, "data/sound/death.wav");
+    load(SFX::SHOT, "data/sound/shot.wav");
 }
 
 void SFXPlayer::load(const SFX type, const std::string &path)

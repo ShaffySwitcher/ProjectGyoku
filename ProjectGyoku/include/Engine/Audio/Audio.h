@@ -43,10 +43,11 @@ private:
 enum class SFX {
     DUMMY,
     PAUSE,
+    DEATH,
+    SHOT,
+    EXTEND,
     COUNT
 };
-
-const char* getSFXName(SFX type);
 
 struct PlayingSFX {
     ~PlayingSFX();

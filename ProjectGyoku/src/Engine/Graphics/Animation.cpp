@@ -12,7 +12,8 @@ std::vector<ANMRunner*> ANMRunner::activeRunners = {};
 const std::map<std::string, std::string> animationPaths = {
 	{ "dummy", "data/dummy.anm" },
 	{ "text", "data/text/text.anm" },
-	{ "player00", "data/player/player00.anm" }
+	{ "player00", "data/player/player00.anm" },
+	{ "hud", "data/hud/hud.anm" }
 };
 
 std::shared_ptr<ANM> ANMManager::load(const std::string& name, const std::string& path)

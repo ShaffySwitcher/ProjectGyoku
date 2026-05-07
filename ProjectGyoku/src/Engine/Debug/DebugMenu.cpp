@@ -18,6 +18,8 @@
 #include "Engine/Supervisor.h"
 #include "Engine/Utils.h"
 
+#include "Scene/Game.h"
+
 bool DebugMenu::isOpen = false;
 std::vector<DebugMenu::Page> DebugMenu::pageStack{};
 std::vector<DebugMenu::PageFactory> DebugMenu::factoryStack{};
@@ -973,6 +975,7 @@ DebugMenu::PageFactory DebugMenu::makeGame()
 
         page.entries.push_back(Entry::nav([]() { return std::string("Configuration >"); }, []() { DebugMenu::push(DebugMenu::makeGameConfiguration()); }));
         page.entries.push_back(Entry::nav([]() { return std::string("Stats >"); }, []() { DebugMenu::push(DebugMenu::makeGameStats()); }));
+        page.entries.push_back(Entry::action([]() { return std::string("Kill Player"); }, []() { std::dynamic_pointer_cast<Game>(gStateManager.getState())->getPlayer()->collide(); }));
         page.entries.push_back(Entry::back());
 
         return page;
@@ -1034,6 +1037,51 @@ DebugMenu::PageFactory DebugMenu::makeGameStats()
     return []() -> Page {
         Page page;
         page.title = "Debug Menu / Game / Stats";
+
+        page.entries.push_back(Entry::value(
+            []() { return format("Player Lives: %d", gGameManager.lives); },
+            [](int direction) {
+                int lives = gGameManager.lives;
+                lives = clamp(lives + direction, 0, 8);
+                gGameManager.lives = static_cast<uint8_t>(lives);
+            }
+        ));
+
+        page.entries.push_back(Entry::value(
+            []() { return format("Player Bombs: %d", gGameManager.bombs); },
+            [](int direction) {
+                int bombs = gGameManager.bombs;
+                bombs = clamp(bombs + direction, 0, 8);
+                gGameManager.bombs = static_cast<uint8_t>(bombs);
+            }
+        ));
+
+        page.entries.push_back(Entry::value(
+            []() { return format("Player Power: %.1f", gGameManager.power); },
+            [](int direction) {
+                int power = gGameManager.power;
+                power = clamp(power + direction, 0, 128);
+                gGameManager.power = power;
+            }
+        ));
+
+        page.entries.push_back(Entry::value(
+            []() { return format("Player Graze: %d", gGameManager.graze); },
+            [](int direction) {
+                int graze = gGameManager.graze;
+                graze = clamp(graze + direction, 0, 65535);
+                gGameManager.graze = static_cast<uint16_t>(graze);
+            }
+        ));
+
+        page.entries.push_back(Entry::value(
+            []() { return format("Player Points: %d", gGameManager.points); },
+            [](int direction) {
+                int points = gGameManager.points;
+                points = clamp(points + direction, 0, 65535);
+                gGameManager.points = static_cast<uint16_t>(points);
+            }
+        ));
 
         page.entries.push_back(Entry::back());
 

@@ -23,6 +23,7 @@ public:
 
 private:
 	std::shared_ptr<State> state = nullptr;
+	std::shared_ptr<State> pendingState = nullptr;
 };
 
 extern StateManager gStateManager;

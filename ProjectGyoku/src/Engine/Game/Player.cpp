@@ -2,11 +2,13 @@
 #include "Engine/Utils.h"
 #include "Engine/Input.h"
 #include "Engine/Supervisor.h"
+#include "Engine/Audio/Audio.h"
+#include "Engine/Log.h"
 
-Player::Player(std::shared_ptr<ANM> animation, const SHT &sht) : Element(Vector(GAME_WIDTH / 2.0f, GAME_WIDTH)) {
+Player::Player(Game* game, std::shared_ptr<ANM> animation, const SHT &sht) : Element(Vector(GAME_WIDTH / 2.0f, GAME_WIDTH)) {
     this->animation = animation;
     this->sht = sht;
-    this->game = nullptr;
+    this->game = game;
 
 	this->direction = PlayerDirection::PLAYER_DIRECTION_NONE;
     this->state = PlayerState::PLAYER_STATE_ALIVE;
@@ -16,7 +18,7 @@ Player::Player(std::shared_ptr<ANM> animation, const SHT &sht) : Element(Vector(
 
     this->invTimer = TO_FRAMES(5);
     
-    this->setAnim(PLAYER_ANIM_IDLE);
+    this->setAnim(PLAYER_ANIM_SCRIPT_IDLE);
 
     // Initialize orbs
     this->orbs[0] = std::make_unique<Effect>(this->position, 10, animation);
@@ -28,15 +30,48 @@ Player::Player(std::shared_ptr<ANM> animation, const SHT &sht) : Element(Vector(
 
     // Initialize hitbox
     this->hitbox[0] = std::make_unique<Effect>(this->position, 11, animation);
+    this->hitbox[0]->getDrawable()->setScale((this->sht.hitbox / 4.0f) * Vector(1.0f, 1.0f)); // rescales based on spritesheet size
     this->hitbox[1] = std::make_unique<Effect>(this->position, 12, animation);
     this->hitbox[2] = std::make_unique<Effect>(this->position, 13, animation);
+
+    // Bind bomb functions
+    switch(gGameManager.character / SHOT_TYPE_COUNT) {
+        case static_cast<uint8_t>(Character::LLOYD):
+            switch(gGameManager.character % SHOT_TYPE_COUNT) {
+                case static_cast<uint8_t>(ShotType::SHOT_TYPE_A):
+                    this->bomb = {
+                        &Player::lloydABombInit,
+                        &Player::lloydABombDestroy,
+                        &Player::lloydABombUpdate,
+                        &Player::lloydABombRender
+                    };
+                    break;
+                case static_cast<uint8_t>(ShotType::SHOT_TYPE_B):
+                    this->bomb = {
+                        &Player::lloydBBombInit,
+                        &Player::lloydBBombDestroy,
+                        &Player::lloydBBombUpdate,
+                        &Player::lloydBBombRender
+                    };
+                    break;
+                case static_cast<uint8_t>(ShotType::SHOT_TYPE_C):
+                    this->bomb = {
+                        &Player::lloydCBombInit,
+                        &Player::lloydCBombDestroy,
+                        &Player::lloydCBombUpdate,
+                        &Player::lloydCBombRender
+                    };
+                    break;
+            }
+            break;
+    }
 }
 
 void Player::update() {
     float dx = 0.0f;
     float dy = 0.0f;
 
-    if(this->deathTimer == 0) {
+    if(this->state == PlayerState::PLAYER_STATE_ALIVE) {
         float speed = (this->focused) ? sht.playerSpeed.focus : sht.playerSpeed.normal;
         float diagSpeed = (this->focused) ? sht.playerSpeed.focusDiagonal : sht.playerSpeed.diagonal;
 
@@ -71,15 +106,15 @@ void Player::update() {
 
         if(dx < 0.0f && direction != PlayerDirection::PLAYER_DIRECTION_LEFT) {
             direction = PlayerDirection::PLAYER_DIRECTION_LEFT;
-            setAnim(PLAYER_ANIM_MOVE_LEFT);
+            setAnim(PLAYER_ANIM_SCRIPT_MOVE_LEFT);
         } else if(dx > 0.0f && direction != PlayerDirection::PLAYER_DIRECTION_RIGHT) {
             direction = PlayerDirection::PLAYER_DIRECTION_RIGHT;
-            setAnim(PLAYER_ANIM_MOVE_RIGHT);
+            setAnim(PLAYER_ANIM_SCRIPT_MOVE_RIGHT);
         } else if(dx == 0.0f && direction != PlayerDirection::PLAYER_DIRECTION_NONE) {
             if(direction == PlayerDirection::PLAYER_DIRECTION_LEFT) {
-                setAnim(PLAYER_ANIM_MOVE_END_LEFT);
+                setAnim(PLAYER_ANIM_SCRIPT_MOVE_END_LEFT);
             } else if(direction == PlayerDirection::PLAYER_DIRECTION_RIGHT) {
-                setAnim(PLAYER_ANIM_MOVE_END_RIGHT);
+                setAnim(PLAYER_ANIM_SCRIPT_MOVE_END_RIGHT);
             }
             direction = PlayerDirection::PLAYER_DIRECTION_NONE;
         }
@@ -114,7 +149,6 @@ void Player::update() {
         }
 
         // Update orbs
-
         if (this->orbInterpolator) {
             this->orbInterpolator->update(gGameManager.frame);
             Vector offset = this->orbInterpolator->getValue();
@@ -143,9 +177,85 @@ void Player::update() {
         }
     }
 
-    // TO-DO: Bomb
+    // Handle (death)bombing
+    if (this->state == PlayerState::PLAYER_STATE_ALIVE || (this->state == PlayerState::PLAYER_STATE_DYING && this->deathTimer < this->sht.deathBombWindow)) {
+        if (Input::gameInputPressed[static_cast<uint8_t>(GameInput::BOMB)] && this->bombTimer == 0 && gGameManager.bombs > 0) {
+            gGameManager.bombsUsed++;
+            gGameManager.bombs--;
+            this->state = PlayerState::PLAYER_STATE_ALIVE;
+            this->deathTimer = 0;
+            
+            // TO-DO: Set spellcard bombed flag here
+            // TO-DO: Collect all items
 
-    // TO-DO: Death animation
+            this->bomb.init(this);
+        }
+    }
+
+    if (this->state == PlayerState::PLAYER_STATE_DYING) {
+        this->deathTimer++;
+        if (this->deathTimer == this->sht.deathBombWindow) {
+            this->state = PlayerState::PLAYER_STATE_DEAD;
+            this->deathTimer = 0;
+            // TO-DO: Set spellcard capture failure flag here
+
+            gGameManager.power = max(gGameManager.power - 16, 0);
+            gGameManager.bombs = gGameManager.startingBombs;
+            // TO-DO: unset player lasers
+
+            gGameManager.deaths++;
+            gGameManager.lives--;
+            if (gGameManager.lives < 0) {
+                if (gGameManager.inPracticeMode) {
+                    Log::error("Player::update() - Player died in practice mode, add Result Screen!");
+                }
+                if (gGameManager.inReplayMode) {
+                    Log::error("Player::update() - Player died in replay mode, add Replay Menu!");
+                }
+                if (gGameManager.continuesUsed >= 3 || gGameManager.difficulty == static_cast<uint8_t>(Difficulty::EXTRA)) {
+                    Log::error("Player::update() - Game over, add Result Screen!");
+                }
+
+                this->game->triggerContinueMenu();
+                return;
+            } else {
+                // TO-DO: drop bonus
+            }
+
+            this->drawable->setScale(Point(0.75f, 1.5f));
+            this->drawable->fade(26, 96);
+            this->drawable->scaleTo(26, Point(0.0f, 2.5f));
+        }
+    } else if (this->state == PlayerState::PLAYER_STATE_DEAD) {
+        this->deathTimer++;
+        if (this->deathTimer == 25) {
+            // TO-DO: Cancel all bullets
+
+            this->position = Vector(GAME_WIDTH / 2.0f, GAME_WIDTH);
+            this->direction = PlayerDirection::PLAYER_DIRECTION_NONE;
+            this->setAnim(PLAYER_ANIM_SCRIPT_IDLE);
+
+            this->drawable->setAlpha(128);
+            this->drawable->setScale(Point(0.0f, 2.5f));
+            this->drawable->fade(30, 255);
+            this->drawable->scaleTo(30, Point(1.0f, 1.0f));   
+        } else if (this->deathTimer == 55) {
+            this->invTimer = TO_FRAMES(5);
+            this->state = PlayerState::PLAYER_STATE_ALIVE;
+            this->deathTimer = 0;
+        }
+    }
+
+    // Bomb update
+    if (this->bombTimer > 0) {
+        this->bomb.update(this);
+        this->bombTimer--;
+
+        if(this->bombTimer == 0) {
+            this->bomb.destroy(this);
+        }
+        // TO-DO: Unset bomb labels
+    }
 
     if (this->runner) { this->runner->step(); }
 }
@@ -164,6 +274,18 @@ void Player::renderHitbox() {
             hitbox->render();
         }
     }
+}
+
+void Player::collide() {
+    if (this->state != PlayerState::PLAYER_STATE_ALIVE || this->invTimer > 0) {
+        return;
+    }
+
+    this->state = PlayerState::PLAYER_STATE_DYING;
+    this->deathTimer = 0;
+
+    // TO-DO: Particles
+    SFXPlayer::play(SFX::DEATH);
 }
 
 void Player::setAnim(uint32_t id) {

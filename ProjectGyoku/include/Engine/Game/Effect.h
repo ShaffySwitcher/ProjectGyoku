@@ -8,4 +8,6 @@ public:
 
     bool update();
     void interrupt(int32_t label, bool setVisible = false);
+
+    std::shared_ptr<Drawable> getDrawable() const { return this->drawable; }
 };

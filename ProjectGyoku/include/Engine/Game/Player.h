@@ -7,20 +7,19 @@
 #include "Scene/Game.h"
 #include <array>
 
-
+class Player;
 class Game;
 
-#define PLAYER_ANIM_IDLE 0
-#define PLAYER_ANIM_MOVE_LEFT 1
-#define PLAYER_ANIM_MOVE_END_LEFT 2
-#define PLAYER_ANIM_MOVE_RIGHT 3
-#define PLAYER_ANIM_MOVE_END_RIGHT 4
+#define PLAYER_ANIM_SCRIPT_IDLE 0
+#define PLAYER_ANIM_SCRIPT_MOVE_LEFT 1
+#define PLAYER_ANIM_SCRIPT_MOVE_END_LEFT 2
+#define PLAYER_ANIM_SCRIPT_MOVE_RIGHT 3
+#define PLAYER_ANIM_SCRIPT_MOVE_END_RIGHT 4
 
 enum class PlayerState {
 	PLAYER_STATE_ALIVE,
-	PLAYER_STATE_SPAWNING,
-	PLAYER_STATE_DEAD,
-	PLAYER_STATE_INVULNERABLE
+	PLAYER_STATE_DYING,
+	PLAYER_STATE_DEAD
 };
 
 enum class PlayerDirection {
@@ -29,17 +28,27 @@ enum class PlayerDirection {
 	PLAYER_DIRECTION_RIGHT
 };
 
-class Player;
+struct PlayerBomb {
+    void (Player::*initFunc)() = nullptr;
+    void (Player::*destroyFunc)() = nullptr;
+    void (Player::*updateFunc)() = nullptr;
+    void (Player::*renderFunc)() = nullptr;
+
+    void init(Player* p)    { if (initFunc)    (p->*initFunc)(); }
+    void destroy(Player* p) { if (destroyFunc) (p->*destroyFunc)(); }
+    void update(Player* p)  { if (updateFunc)  (p->*updateFunc)(); }
+    void render(Player* p)  { if (renderFunc)  (p->*renderFunc)(); }
+};
 
 class Player : public Element {
 public:
-    Player(std::shared_ptr<ANM> animation, const SHT& sht);
+    Player(Game* game, std::shared_ptr<ANM> animation, const SHT& sht);
 
 	void update();
 	virtual void render() override;
 	void renderHitbox();
 
-	void setGame(Game* game) { this->game = game; }
+	void collide();
 private:
 	Game* game;
 	std::shared_ptr<ANM> animation;
@@ -48,6 +57,7 @@ private:
 	PlayerDirection direction;
 
 	Timer fireTimer;
+	Timer bombTimer;
 	Timer deathTimer;
 	Timer invTimer;
 
@@ -58,8 +68,26 @@ private:
 
 	std::unique_ptr<Interpolator<Vector>> orbInterpolator;
 
+	PlayerBomb bomb;
+
 	void setAnim(uint32_t id);
 	void startFocusing();
 	void stopFocusing();
 	void fire();
+
+	// Bomb functions
+	void lloydABombInit();
+	void lloydABombDestroy();
+	void lloydABombUpdate();
+	void lloydABombRender();
+
+	void lloydBBombInit();
+	void lloydBBombDestroy();
+	void lloydBBombUpdate();
+	void lloydBBombRender();
+
+	void lloydCBombInit();
+	void lloydCBombDestroy();
+	void lloydCBombUpdate();
+	void lloydCBombRender();
 };

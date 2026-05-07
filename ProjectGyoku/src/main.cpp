@@ -228,6 +228,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 		return 1;
 	}
 
+	gGameManager.character = static_cast<uint8_t>(Character::LLOYD) * SHOT_TYPE_COUNT + static_cast<uint8_t>(ShotType::SHOT_TYPE_A);
+	gGameManager.difficulty = static_cast<uint8_t>(Difficulty::HARD);
+	
 	gStateManager.setState(std::make_shared<Game>());
 
 	while (true) {

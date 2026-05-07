@@ -9,6 +9,20 @@ void StateManager::update()
 	if (this->state) {
 		this->state->update();
 	}
+
+	// If a state change was requested during the update, apply it now
+	if (this->pendingState) {
+		auto oldState = this->state;
+		if (oldState) {
+			oldState->destroy();
+		}
+
+		this->state = this->pendingState;
+		this->pendingState.reset();
+		if (this->state) {
+			this->state->init();
+		}
+	}
 }
 
 void StateManager::render()
@@ -30,15 +44,19 @@ void StateManager::restore()
 
 std::shared_ptr<State> StateManager::setState(std::shared_ptr<State> state)
 {
-	auto oldState = this->state;
-	if (oldState) {
-		oldState->destroy();
-	}
+	if (this->state) {	
+		if (this->pendingState) {
+			this->pendingState->destroy();
+		}
 
-	this->state = state;
-	if (this->state) {
-		this->state->init();
+		auto oldPending = this->pendingState;
+		this->pendingState = state;
+		return oldPending;
+	} else {
+		this->state = state;
+		if (this->state) {
+			this->state->init();
+		}
+		return nullptr;
 	}
-
-	return oldState;
 }

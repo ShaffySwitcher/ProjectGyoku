@@ -3,8 +3,10 @@
 #include <DxLib.h>
 #include "Engine/State.h"
 #include "Engine/Game/Player.h"
+#include "Engine/Game/Interface.h"
 
 class Player;
+class Interface;
 
 enum class GameState {
     RUNNING,
@@ -25,12 +27,30 @@ public:
     virtual void render() override;
     virtual void restore() override;
 
-private:
-    std::shared_ptr<Player> player;
+    std::shared_ptr<Player> getPlayer() { return this->player; }
     
+    void extendPlayer();
+
+    void triggerContinueMenu();
+
+private:
+    // Game Objects
+    std::shared_ptr<Interface> hud;
+    std::shared_ptr<Player> player;
+
+    // Common Assets
+    std::shared_ptr<ANM> playerAnimation;
+    SHT playerSHT;
+
+    // Stage Assets
+
+    // State Management
     GameState state;
     int transitionFrame = 0;
+    int finalSurface;
 
+    void createSurfaces();
+    void setDefaultPlayerValues();
     void startStage();
 
     void updateGame();
